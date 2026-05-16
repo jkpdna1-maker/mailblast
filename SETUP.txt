@@ -1,0 +1,173 @@
+MAILBLAST — SETUP & RUN GUIDE
+==============================
+
+WHAT YOU NEED INSTALLED
+------------------------
+- Node.js (version 18 or higher) — https://nodejs.org
+- A Gmail or Google Workspace account
+
+STEP 1: GET GOOGLE OAUTH CREDENTIALS (one-time, free)
+------------------------------------------------------
+1. Go to https://console.cloud.google.com
+2. Create a new project (name it "MailBlast" or anything)
+3. Go to "APIs & Services" > "Library"
+4. Search for "Gmail API" and click Enable
+5. Go to "APIs & Services" > "OAuth consent screen"
+   - Choose "External"
+   - Fill in App name: MailBlast, your email, save
+   - Add scope: .../auth/gmail.send
+   - Add your Gmail address as a test user
+6. Go to "APIs & Services" > "Credentials"
+   - Click "Create Credentials" > "OAuth 2.0 Client ID"
+   - Application type: Web application
+   - Authorized redirect URIs: http://localhost:3001/auth/google/callback
+   - Click Create — copy the Client ID and Client Secret
+
+STEP 2: CONFIGURE THE APP
+--------------------------
+1. Open the folder: mailblast/backend/
+2. Copy .env.example to a new file called .env
+3. Fill in your values:
+
+   GOOGLE_CLIENT_ID=paste_your_client_id_here
+   GOOGLE_CLIENT_SECRET=paste_your_client_secret_here
+   GOOGLE_REDIRECT_URI=http://localhost:3001/auth/google/callback
+   SESSION_SECRET=any_long_random_string_you_make_up
+   PORT=3001
+   FRONTEND_URL=http://localhost:3000
+   TRACKING_BASE_URL=http://localhost:3001
+
+STEP 3: INSTALL AND START THE BACKEND
+--------------------------------------
+Open a terminal and run:
+
+   cd mailblast/backend
+   npm install
+   npm start
+
+You should see:
+   MailBlast backend running on http://localhost:3001
+
+STEP 4: INSTALL AND START THE FRONTEND
+---------------------------------------
+Open a SECOND terminal window and run:
+
+   cd mailblast/frontend
+   npm install
+   npm start
+
+Browser opens automatically at http://localhost:3000
+
+STEP 5: USE THE APP
+-------------------
+1. Click "Sign in with Google"
+2. Authorize with your Gmail account
+3. Click "+ New campaign"
+4. Step 1: Add recipients
+   - Paste emails directly (one per line or comma separated)
+   - OR upload a .csv, .xlsx, or .txt file
+   - OR type emails one by one
+5. Step 2: Write your message
+   - Set from name, from email, subject
+   - Write message in the rich text editor
+   - Use {{name}} to personalize each email with recipient's name
+   - Attach a PDF or image if needed
+   - Toggle "Track opens" on
+6. Step 3: Send
+   - Click "Send to all now" — live progress shows on screen
+   - OR toggle "Schedule for later" and pick date/time
+7. After sending: view the campaign to see who opened your email
+
+EMAIL LIST FILE FORMAT
+-----------------------
+CSV example (with name column — enables {{name}} personalization):
+   email,name
+   john@example.com,John
+   sarah@firm.org,Sarah
+
+CSV example (email only — no header needed):
+   john@example.com
+   sarah@firm.org
+   ravi@startup.in
+
+Excel (.xlsx): same structure — email column + optional name column
+
+Plain text (.txt): one email per line, or comma separated
+
+PDF ATTACHMENT
+--------------
+In Step 2, click "Attach PDF or image". The file is stored and sent
+as an attachment with every email in the campaign. Max file size: 20MB.
+
+OPEN TRACKING
+-------------
+When enabled, a tiny invisible image is embedded in each email.
+When the recipient opens the email and images load, the open is recorded.
+The campaign detail page shows: who opened, when, and from what device.
+
+Note: ~30% of email clients block tracking pixels (Apple Mail privacy
+protection, etc.). Those opens will not be counted. This is the same
+limitation that Mailchimp and all other platforms have.
+
+GMAIL DAILY LIMITS
+------------------
+Regular Gmail:        500 emails per day
+Google Workspace:     2,000 emails per day
+
+The app sends at ~10 emails/second to stay within rate limits.
+500 emails will take about 1 minute to send.
+
+SCHEDULE SENDING
+----------------
+The scheduler checks every minute for campaigns that are due to send.
+IMPORTANT: The backend server must be running at the scheduled time
+for the send to happen. If you shut down the server, the job will
+run the next time you start the server and the minute check fires.
+
+For production use (always-on scheduling), deploy the backend to a
+server or VPS so it stays running 24/7.
+
+FOLDER STRUCTURE
+----------------
+mailblast/
+  backend/
+    server.js           — Express server entry point
+    .env                — Your credentials (create from .env.example)
+    mailblast.db        — SQLite database (auto-created on first run)
+    routes/
+      auth.js           — Google OAuth login/logout
+      campaigns.js      — All campaign endpoints + tracking pixel
+    services/
+      gmail.js          — Gmail API client
+      sender.js         — Email building and sending logic
+      parser.js         — CSV/Excel/text email list parser
+      scheduler.js      — Cron-based scheduled send
+    db/
+      database.js       — SQLite schema and connection
+  frontend/
+    src/
+      App.js            — Main app shell and routing
+      api.js            — All API calls to backend
+      pages/
+        Login.js        — Google sign-in page
+        Dashboard.js    — Campaign list with stats
+        Compose.js      — 3-step new campaign wizard
+        CampaignDetail.js — Campaign stats + open tracking data
+
+TROUBLESHOOTING
+---------------
+"redirect_uri_mismatch" error:
+  Check that http://localhost:3001/auth/google/callback is listed
+  exactly in your Google Cloud authorized redirect URIs.
+
+"Gmail API not enabled":
+  Go to Google Cloud Console > APIs > Gmail API > Enable.
+
+Emails going to spam:
+  This is normal when sending from a personal Gmail to many recipients.
+  To improve deliverability: use Google Workspace, warm up your sending
+  volume gradually, and ensure your message is not spammy.
+
+"App not verified" warning on Google sign-in:
+  Click "Advanced" > "Go to MailBlast (unsafe)" — this is normal for
+  personal apps you haven't submitted for Google verification.
