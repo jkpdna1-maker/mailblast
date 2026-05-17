@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const cookieSession = require('cookie-session');  // ← add here
 const cors = require('cors');
 const { initDb } = require('./db/database');
 const { startScheduler } = require('./services/scheduler');
@@ -28,7 +29,6 @@ async function start() {
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,
-    const cookieSession = require('cookie-session');
   app.use(cookieSession({
     name: 'session',
     secret: process.env.SESSION_SECRET || 'dev_secret',
