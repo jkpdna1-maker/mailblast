@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 const cors = require('cors');
 const { initDb } = require('./db/database');
 const { startScheduler } = require('./services/scheduler');
@@ -22,6 +23,7 @@ async function start() {
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(session({
+    store: new SQLiteStore({ db: 'sessions.db', dir: './' }),
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,
