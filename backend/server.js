@@ -13,14 +13,19 @@ async function start() {
 
   const app = express();
 
-  app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+  const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'https://enchanting-muffin-338578.netlify.app'
+].filter(Boolean);
+  app.use(cors({ origin: allowedOrigins, credentials: true }));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.use(session({
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, secure: false, maxAge: 7 * 24 * 60 * 60 * 1000 }
+    cookie: { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 }
   }));
 
   const authRoutes = require('./routes/auth');
