@@ -36,7 +36,7 @@ async function start() {
 
   app.use('/auth', authRoutes);
   app.use('/campaigns', campaignRoutes);
-  app.use('/track', campaignRoutes);
+  app.use('/', campaignRoutes);
   app.get('/health', (req, res) => res.json({ ok: true }));
 
   startScheduler();
