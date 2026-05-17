@@ -15,6 +15,15 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('auth') === 'success') {
+      const email = params.get('email');
+      const name = params.get('name');
+      const picture = params.get('picture');
+      if (email && name) {
+        setUser({ email, name, picture });
+        setLoading(false);
+        window.history.replaceState({}, '', '/');
+        return;
+      }
       window.history.replaceState({}, '', '/');
     }
     getMe().then(u => { setUser(u); setLoading(false); }).catch(() => setLoading(false));
