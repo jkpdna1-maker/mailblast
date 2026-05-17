@@ -28,7 +28,14 @@ async function start() {
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 }
+    const cookieSession = require('cookie-session');
+  app.use(cookieSession({
+    name: 'session',
+    secret: process.env.SESSION_SECRET || 'dev_secret',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    secure: true,
+    sameSite: 'none',
+    httpOnly: true
   }));
 
   const authRoutes = require('./routes/auth');
