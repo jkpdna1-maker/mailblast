@@ -19,19 +19,26 @@ export default function App() {
       const name = params.get('name');
       const picture = params.get('picture');
       if (email && name) {
-        setUser({ email, name, picture });
+        const u = { email, name, picture };
+        setUser(u);
+        localStorage.setItem('mb_user', JSON.stringify(u));
         setLoading(false);
         window.history.replaceState({}, '', '/');
         return;
       }
       window.history.replaceState({}, '', '/');
     }
-    getMe().then(u => { setUser(u); setLoading(false); }).catch(() => setLoading(false));
+    getMe().then(u => { setUser(u); localStorage.setItem('mb_user', JSON.stringify(u)); setLoading(false); }).catch(() => {
+      const stored = localStorage.getItem('mb_user');
+      if (stored) { setUser(JSON.parse(stored)); }
+      setLoading(false);
+    });
   }, []);
 
   const handleLogout = async () => {
     await logout();
     setUser(null);
+    localStorage.removeItem('mb_user');
     setPage('dashboard');
   };
 
