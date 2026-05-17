@@ -49,7 +49,7 @@ router.get('/me', (req, res) => {
 
 // Logout
 router.post('/logout', (req, res) => {
-  req.session.destroy();
+  req.session = null;
   res.json({ ok: true });
 });
 
