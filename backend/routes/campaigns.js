@@ -5,7 +5,7 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../db/database');
 const { parseEmailList, parseFromText } = require('../services/parser');
 const { sendCampaign } = require('../services/sender');
-
+const { registerTokens } = require('../services/scheduler');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 function requireAuth(req, res, next) {
@@ -126,6 +126,7 @@ router.post('/:id/schedule', requireAuth, (req, res) => {
   const campaign = db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
     .get(req.params.id, req.session.user.email);
   if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+  registerTokens(req.session.user.email, req.session.tokens);
   const jobId = uuidv4();
   db.prepare('INSERT INTO scheduled_jobs (id, campaign_id, scheduled_at) VALUES (?, ?, ?)').run(jobId, req.params.id, scheduled_at);
   db.prepare("UPDATE campaigns SET status = 'scheduled', scheduled_at = ? WHERE id = ?").run(scheduled_at, req.params.id);

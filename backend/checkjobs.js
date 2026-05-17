@@ -1,0 +1,1 @@
+const { initDb, prepare } = require('./db/database'); async function main() { await initDb(); const jobs = prepare('SELECT * FROM scheduled_jobs ORDER BY id DESC LIMIT 5').all(); console.log('Jobs:', JSON.stringify(jobs, null, 2)); const now = new Date().toISOString().slice(0, 16); console.log('Now:', now); process.exit(0); } main();
