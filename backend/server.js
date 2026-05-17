@@ -28,7 +28,7 @@ async function start() {
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 }
+    cookie: { httpOnly: true, secure: process.env.NODE_ENV !== 'development', sameSite: process.env.NODE_ENV !== 'development' ? 'none' : 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 }
   }));
 
   const authRoutes = require('./routes/auth');
@@ -38,6 +38,12 @@ async function start() {
   app.use('/campaigns', campaignRoutes);
   app.use('/track', campaignRoutes);
   app.get('/health', (req, res) => res.json({ ok: true }));
+  
+  const path = require('path');
+  app.use(express.static(path.join(__dirname, '../frontend/build')));
+  app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+  });
 
   startScheduler();
 
