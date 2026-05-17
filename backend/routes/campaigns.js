@@ -147,7 +147,7 @@ router.delete('/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
-router.get('/open/:campaignId/:recipientId', (req, res) => {
+router.get('/track/open/:campaignId/:recipientId', (req, res) => {
   const { campaignId, recipientId } = req.params;
   const cleanRecipientId = recipientId.replace('.png', '');
   try {
