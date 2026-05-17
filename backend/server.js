@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
 const cors = require('cors');
 const { initDb } = require('./db/database');
 const { startScheduler } = require('./services/scheduler');
@@ -24,11 +23,10 @@ async function start() {
   app.use(express.urlencoded({ extended: true }));
   app.set('trust proxy', 1);
   app.use(session({
-    store: new SQLiteStore({ db: 'sessions.db', dir: './' }),
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, secure: process.env.NODE_ENV !== 'development', sameSite: process.env.NODE_ENV !== 'development' ? 'none' : 'lax', maxAge: 7 * 24 * 60 * 60 * 1000 }
+    cookie: { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 }
   }));
 
   const authRoutes = require('./routes/auth');
