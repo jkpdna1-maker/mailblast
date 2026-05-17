@@ -25,6 +25,7 @@ function createTables() {
   _db.run(`CREATE TABLE IF NOT EXISTS attachments (id TEXT PRIMARY KEY, campaign_id TEXT NOT NULL, filename TEXT NOT NULL, mimetype TEXT NOT NULL, size INTEGER, data BLOB)`);
   _db.run(`CREATE TABLE IF NOT EXISTS scheduled_jobs (id TEXT PRIMARY KEY, campaign_id TEXT NOT NULL, scheduled_at TEXT NOT NULL, status TEXT DEFAULT 'pending', created_at TEXT DEFAULT (datetime('now')))`);
   _db._save();
+  _db.run(`CREATE TABLE IF NOT EXISTS user_tokens (user_email TEXT PRIMARY KEY, tokens TEXT NOT NULL, updated_at TEXT DEFAULT (datetime('now')))`);
 }
 function prepare(sql) {
   return {
