@@ -22,6 +22,7 @@ async function start() {
   app.use(cors({ origin: allowedOrigins, credentials: true }));
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
+  app.set('trust proxy', 1);
   app.use(session({
     store: new SQLiteStore({ db: 'sessions.db', dir: './' }),
     secret: process.env.SESSION_SECRET || 'dev_secret',
