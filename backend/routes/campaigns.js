@@ -101,6 +101,7 @@ router.delete('/:id/attachments/:attId', requireAuth, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Send now
 router.get('/:id/send', requireAuth, async (req, res) => {
   const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
     .get(req.params.id, req.session.user.email);
@@ -121,6 +122,47 @@ router.get('/:id/send', requireAuth, async (req, res) => {
   res.end();
 });
 
+// Send test email
+router.post('/:id/test', requireAuth, async (req, res) => {
+  const { test_email } = req.body;
+  if (!test_email) return res.status(400).json({ error: 'test_email required' });
+  const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
+    .get(req.params.id, req.session.user.email);
+  if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+  const tokens = req.session.tokens;
+  if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
+  try {
+    const { sendTestEmail } = require('../services/sender');
+    await sendTestEmail(campaign, tokens, test_email);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Resend failed
+router.get('/:id/resend-failed', requireAuth, async (req, res) => {
+  const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
+    .get(req.params.id, req.session.user.email);
+  if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+  const tokens = req.session.tokens;
+  if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
+  await db.prepare("UPDATE recipients SET status = 'pending', error = NULL WHERE campaign_id = ? AND status = 'failed'").run(req.params.id);
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+  try {
+    await sendCampaign(campaign.id, tokens, (progress) => { send(progress); });
+    send({ done: true });
+  } catch (err) {
+    send({ error: err.message, done: true });
+  }
+  res.end();
+});
+
+// Schedule
 router.post('/:id/schedule', requireAuth, async (req, res) => {
   const { scheduled_at } = req.body;
   if (!scheduled_at) return res.status(400).json({ error: 'scheduled_at required' });
@@ -138,6 +180,16 @@ router.delete('/:id/schedule', requireAuth, async (req, res) => {
   await db.prepare("UPDATE scheduled_jobs SET status = 'cancelled' WHERE campaign_id = ? AND status = 'pending'").run(req.params.id);
   await db.prepare("UPDATE campaigns SET status = 'draft', scheduled_at = NULL WHERE id = ?").run(req.params.id);
   res.json({ ok: true });
+});
+
+// Unsubscribe
+router.get('/unsubscribe/:campaignId/:email', async (req, res) => {
+  const { campaignId, email } = req.params;
+  const decodedEmail = decodeURIComponent(email);
+  try {
+    await db.prepare("UPDATE recipients SET status = 'unsubscribed' WHERE campaign_id = ? AND email = ?").run(campaignId, decodedEmail);
+  } catch (e) {}
+  res.send('<html><body style="font-family:sans-serif;text-align:center;padding:50px"><h2>You have been unsubscribed</h2><p>You will no longer receive emails from this campaign.</p></body></html>');
 });
 
 router.delete('/:id', requireAuth, async (req, res) => {
