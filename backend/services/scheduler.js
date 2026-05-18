@@ -3,8 +3,14 @@ const db = require('../db/database');
 const { sendCampaign } = require('./sender');
 
 async function registerTokens(userEmail, tokens) {
-  await db.prepare(`INSERT INTO user_tokens (user_email, tokens, updated_at) VALUES (?, ?, to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS')) ON CONFLICT (user_email) DO UPDATE SET tokens = EXCLUDED.tokens, updated_at = EXCLUDED.updated_at`)
-    .run(userEmail, JSON.stringify(tokens));
+  try {
+    console.log('[tokens] Saving tokens for', userEmail);
+    await db.prepare(`INSERT INTO user_tokens (user_email, tokens, updated_at) VALUES (?, ?, to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS')) ON CONFLICT (user_email) DO UPDATE SET tokens = EXCLUDED.tokens, updated_at = EXCLUDED.updated_at`)
+      .run(userEmail, JSON.stringify(tokens));
+    console.log('[tokens] Saved successfully');
+  } catch (err) {
+    console.error('[tokens] Error saving tokens:', err.message);
+  }
 }
 
 async function getTokensForUser(userEmail) {
