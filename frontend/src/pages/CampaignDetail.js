@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCampaign, cancelSchedule, sendNow, deleteCampaign, resendFailed, sendTestEmail } from '../api';
+import { getCampaign, cancelSchedule, sendNow, deleteCampaign, resendFailed, resendAll, sendTestEmail } from '../api';
 
 export default function CampaignDetail({ id, onBack }) {
   const [campaign, setCampaign] = useState(null);
@@ -38,7 +38,7 @@ export default function CampaignDetail({ id, onBack }) {
   const handleResend = async () => {
     setSending(true);
     setProgress([]);
-    const es = sendNow(id);
+    const es = resendAll(id);
     es.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if (data.done) { es.close(); setSending(false); refresh(); }

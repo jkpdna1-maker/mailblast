@@ -11,6 +11,7 @@ const auth = axios.create({
   withCredentials: true
 });
 export const getMe = () => auth.get('/me').then(r => r.data.user);
+export const resendAll = (id) => new EventSource(`${BASE}/campaigns/${id}/resend-all`, { withCredentials: true });
 export const logout = () => auth.post('/logout');
 export const getCampaigns = () => api.get('/').then(r => r.data);
 export const createCampaign = (data) => api.post('/', data).then(r => r.data);

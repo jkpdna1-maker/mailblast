@@ -159,6 +159,28 @@ router.get('/unsubscribe/:campaignId/:email', async (req, res) => {
   } catch (e) {}
   res.send('<html><body style="font-family:sans-serif;text-align:center;padding:50px"><h2>✅ You have been unsubscribed</h2><p>You will no longer receive emails from this campaign.</p></body></html>');
 });
+// Resend all
+router.get('/:id/resend-all', requireAuth, async (req, res) => {
+  const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
+    .get(req.params.id, req.session.user.email);
+  if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+  let tokens = req.session.tokens;
+  if (!tokens) { const { getTokensForUser } = require('../services/scheduler'); tokens = await getTokensForUser(req.session.user.email); }
+  if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
+  await db.prepare("UPDATE recipients SET status = 'pending', error = NULL WHERE campaign_id = ?").run(req.params.id);
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+  const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+  try {
+    await sendCampaign(campaign.id, tokens, (progress) => { send(progress); });
+    send({ done: true });
+  } catch (err) {
+    send({ error: err.message, done: true });
+  }
+  res.end();
+});
 router.get('/:id/send', requireAuth, async (req, res) => {
   const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
     .get(req.params.id, req.session.user.email);
