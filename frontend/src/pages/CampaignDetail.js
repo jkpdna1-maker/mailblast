@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getCampaign, cancelSchedule, sendNow, deleteCampaign } from '../api';
+import { getCampaign, cancelSchedule, sendNow, deleteCampaign, resendFailed, sendTestEmail } from '../api';
 
 export default function CampaignDetail({ id, onBack }) {
   const [campaign, setCampaign] = useState(null);
@@ -23,7 +23,18 @@ export default function CampaignDetail({ id, onBack }) {
     await deleteCampaign(id);
     onBack();
   };
-
+  
+  const handleResendFailed = async () => {
+    setSending(true);
+    setProgress([]);
+    const es = resendFailed(id);
+    es.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      if (data.done) { es.close(); setSending(false); refresh(); }
+      else setProgress(p => [...p, { msg: (data.status === 'sent' ? '✓ ' : '✗ ') + data.email, status: data.status }]);
+    };
+    es.onerror = () => { es.close(); setSending(false); };
+  };
   const handleResend = async () => {
     setSending(true);
     setProgress([]);
@@ -55,7 +66,12 @@ export default function CampaignDetail({ id, onBack }) {
           )}
           {campaign.status === 'sent' && (
             <button className="btn-primary" onClick={handleResend} disabled={sending}>
-              {sending ? 'Sending...' : 'Resend'}
+              {sending ? 'Sending...' : 'Resend all'}
+            </button>
+          )}
+          {campaign.status === 'sent' && campaign.failed_count > 0 && (
+            <button className="btn-outline" onClick={handleResendFailed} disabled={sending}>
+              {sending ? 'Sending...' : `Resend failed (${campaign.failed_count})`}
             </button>
           )}
         </div>

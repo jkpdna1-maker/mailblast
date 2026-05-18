@@ -35,4 +35,6 @@ export const scheduleCampaign = (id, scheduled_at) =>
 export const cancelSchedule = (id) =>
   api.delete(`/${id}/schedule`).then(r => r.data);
 export const sendNow = (id) => new EventSource(`${BASE}/campaigns/${id}/send`, { withCredentials: true });
+export const resendFailed = (id) => new EventSource(`${BASE}/campaigns/${id}/resend-failed`, { withCredentials: true });
+export const sendTestEmail = (id, email) => api.post(`/${id}/test`, { test_email: email }).then(r => r.data);
 export const deleteCampaign = (id) => api.delete(`/${id}`).then(r => r.data);

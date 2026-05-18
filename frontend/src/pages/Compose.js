@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   createCampaign, uploadRecipients, pasteRecipients,
-  uploadAttachment, deleteAttachment, scheduleCampaign, sendNow
+  uploadAttachment, deleteAttachment, scheduleCampaign, sendNow, sendTestEmail
 } from '../api';
 
 const TABS = ['paste', 'upload', 'manual'];
@@ -34,6 +34,8 @@ export default function Compose({ onSaved, onBack }) {
   const [progress, setProgress] = useState([]);
   const [progressStats, setProgressStats] = useState(null);
   const [done, setDone] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
+  const [testSent, setTestSent] = useState(false);
 
   const fileRef = useRef();
   const pdfRef = useRef();
@@ -135,6 +137,17 @@ export default function Compose({ onSaved, onBack }) {
 
   // ── Step 3: Send / Schedule ─────────────────────────────────────
 
+  const handleTestSend = async () => {
+    if (!testEmail) { alert('Enter a test email address.'); return; }
+    if (!campaignId) { alert('Save the campaign first (go back to step 2 and click Next).'); return; }
+    try {
+      await sendTestEmail(campaignId, testEmail);
+      setTestSent(true);
+      setTimeout(() => setTestSent(false), 3000);
+    } catch (err) {
+      alert('Test email failed: ' + err.message);
+    }
+  };
   const handleSend = async () => {
     if (!campaignId) return;
 
@@ -355,6 +368,16 @@ export default function Compose({ onSaved, onBack }) {
               </div>
             </div>
           )}
+
+          <div className="form-row mt-sm">
+            <div className="form-group">
+              <label>Send a test email first (optional)</label>
+              <div className="input-row">
+                <input type="email" value={testEmail} onChange={e => setTestEmail(e.target.value)} placeholder="test@example.com" />
+                <button className="btn-outline" onClick={handleTestSend}>{testSent ? '✓ Sent!' : 'Send test'}</button>
+              </div>
+            </div>
+          </div>
 
           {!done && (
             <div className="step-actions">
