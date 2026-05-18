@@ -30,7 +30,7 @@ router.get('/google/callback', async (req, res) => {
     };
 
     // Register tokens so scheduler can use them
-    registerTokens(user.email, tokens);
+    await registerTokens(user.email, tokens);
 
     res.redirect(`${process.env.FRONTEND_URL}?auth=success&email=${encodeURIComponent(req.session.user.email)}&name=${encodeURIComponent(req.session.user.name)}&picture=${encodeURIComponent(req.session.user.picture)}`);
   } catch (err) {
