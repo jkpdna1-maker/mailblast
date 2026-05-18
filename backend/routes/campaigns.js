@@ -254,6 +254,30 @@ router.get('/:id/resend-failed', requireAuth, async (req, res) => {
 });
 
 // Schedule
+// Auto resend rules
+router.post('/:id/resend-rules', requireAuth, async (req, res) => {
+  const { type, delay_minutes } = req.body;
+  if (!type || !delay_minutes) return res.status(400).json({ error: 'type and delay_minutes required' });
+  if (!['failed', 'unopened'].includes(type)) return res.status(400).json({ error: 'type must be failed or unopened' });
+  const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
+    .get(req.params.id, req.session.user.email);
+  if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
+  await db.prepare("DELETE FROM resend_rules WHERE campaign_id = ? AND type = ? AND status = 'pending'").run(req.params.id, type);
+  const { v4: uuidv4 } = require('uuid');
+  const id = uuidv4();
+  await db.prepare('INSERT INTO resend_rules (id, campaign_id, type, delay_minutes) VALUES (?, ?, ?, ?)').run(id, req.params.id, type, delay_minutes);
+  res.json({ ok: true, id });
+});
+
+router.get('/:id/resend-rules', requireAuth, async (req, res) => {
+  const rules = await db.prepare('SELECT * FROM resend_rules WHERE campaign_id = ?').all(req.params.id);
+  res.json(rules);
+});
+
+router.delete('/:id/resend-rules/:ruleId', requireAuth, async (req, res) => {
+  await db.prepare('DELETE FROM resend_rules WHERE id = ? AND campaign_id = ?').run(req.params.ruleId, req.params.id);
+  res.json({ ok: true });
+});
 router.post('/:id/schedule', requireAuth, async (req, res) => {
   const { scheduled_at } = req.body;
   if (!scheduled_at) return res.status(400).json({ error: 'scheduled_at required' });

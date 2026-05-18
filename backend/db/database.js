@@ -69,6 +69,16 @@ async function initDb() {
     )
   `);
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS resend_rules (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      delay_minutes INTEGER NOT NULL,
+      status TEXT DEFAULT 'pending',
+      created_at TEXT DEFAULT to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS')
+    )
+  `);
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS user_tokens (
       user_email TEXT PRIMARY KEY,
       tokens TEXT NOT NULL,

@@ -1,17 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { getCampaign, cancelSchedule, sendNow, deleteCampaign, resendFailed, resendAll, sendTestEmail } from '../api';
+import { getCampaign, cancelSchedule, sendNow, deleteCampaign, resendFailed, resendAll, sendTestEmail, getResendRules, createResendRule, deleteResendRule } from '../api';
 
 export default function CampaignDetail({ id, onBack }) {
   const [campaign, setCampaign] = useState(null);
   const [tab, setTab] = useState('overview');
   const [sending, setSending] = useState(false);
   const [progress, setProgress] = useState([]);
+  const [rules, setRules] = useState([]);
+  const [ruleType, setRuleType] = useState('failed');
+  const [ruleDelay, setRuleDelay] = useState(60);
 
   useEffect(() => {
     getCampaign(id).then(setCampaign);
+    getResendRules(id).then(setRules);
   }, [id]);
 
-  const refresh = () => getCampaign(id).then(setCampaign);
+  const refresh = () => { getCampaign(id).then(setCampaign); getResendRules(id).then(setRules); };
 
   const handleCancel = async () => {
     await cancelSchedule(id);
@@ -94,6 +98,46 @@ export default function CampaignDetail({ id, onBack }) {
           </button>
         ))}
       </div>
+
+{campaign.status === 'sent' && (
+        <div className="card mt-sm">
+          <h4>Auto-resend rules</h4>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Type</label>
+              <select value={ruleType} onChange={e => setRuleType(e.target.value)}>
+                <option value="failed">Resend to failed</option>
+                <option value="unopened">Resend to unopened</option>
+              </select>
+            </div>
+            <div className="form-group">
+              <label>Delay (minutes)</label>
+              <input type="number" value={ruleDelay} onChange={e => setRuleDelay(Number(e.target.value))} min={5} />
+            </div>
+            <div className="form-group" style={{display:'flex',alignItems:'flex-end'}}>
+              <button className="btn-primary" onClick={async () => {
+                await createResendRule(id, ruleType, ruleDelay);
+                getResendRules(id).then(setRules);
+              }}>Add rule</button>
+            </div>
+          </div>
+          {rules.length > 0 && (
+            <table className="table mt-sm">
+              <thead><tr><th>Type</th><th>Delay</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {rules.map(r => (
+                  <tr key={r.id}>
+                    <td>{r.type}</td>
+                    <td>{r.delay_minutes} min</td>
+                    <td><span className={`badge badge-${r.status === 'done' ? 'green' : r.status === 'failed' ? 'red' : 'gray'}`}>{r.status}</span></td>
+                    <td><button className="btn-ghost danger" onClick={async () => { await deleteResendRule(id, r.id); getResendRules(id).then(setRules); }}>Remove</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
 
       {tab === 'overview' && (
         <div className="card">

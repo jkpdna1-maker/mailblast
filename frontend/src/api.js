@@ -38,4 +38,7 @@ export const cancelSchedule = (id) =>
 export const sendNow = (id) => new EventSource(`${BASE}/campaigns/${id}/send`, { withCredentials: true });
 export const resendFailed = (id) => new EventSource(`${BASE}/campaigns/${id}/resend-failed`, { withCredentials: true });
 export const sendTestEmail = (id, email) => api.post(`/${id}/test`, { test_email: email }).then(r => r.data);
+export const getResendRules = (id) => api.get(`/${id}/resend-rules`).then(r => r.data);
+export const createResendRule = (id, type, delay_minutes) => api.post(`/${id}/resend-rules`, { type, delay_minutes }).then(r => r.data);
+export const deleteResendRule = (id, ruleId) => api.delete(`/${id}/resend-rules/${ruleId}`).then(r => r.data);
 export const deleteCampaign = (id) => api.delete(`/${id}`).then(r => r.data);
