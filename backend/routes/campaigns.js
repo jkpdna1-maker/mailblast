@@ -109,7 +109,11 @@ router.post('/:id/test', requireAuth, async (req, res) => {
   const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
     .get(req.params.id, req.session.user.email);
   if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-  const tokens = req.session.tokens;
+  let tokens = req.session.tokens;
+  if (!tokens) {
+    const { getTokensForUser } = require('../services/scheduler');
+    tokens = await getTokensForUser(req.session.user.email);
+  }
   if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
   try {
     const { sendTestEmail } = require('../services/sender');
@@ -125,7 +129,11 @@ router.get('/:id/resend-failed', requireAuth, async (req, res) => {
   const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
     .get(req.params.id, req.session.user.email);
   if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-  const tokens = req.session.tokens;
+  let tokens = req.session.tokens;
+  if (!tokens) {
+    const { getTokensForUser } = require('../services/scheduler');
+    tokens = await getTokensForUser(req.session.user.email);
+  }
   if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
   await db.prepare("UPDATE recipients SET status = 'pending', error = NULL WHERE campaign_id = ? AND status = 'failed'").run(req.params.id);
   res.setHeader('Content-Type', 'text/event-stream');
@@ -155,7 +163,11 @@ router.get('/:id/send', requireAuth, async (req, res) => {
   const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
     .get(req.params.id, req.session.user.email);
   if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-  const tokens = req.session.tokens;
+  let tokens = req.session.tokens;
+  if (!tokens) {
+    const { getTokensForUser } = require('../services/scheduler');
+    tokens = await getTokensForUser(req.session.user.email);
+  }
   if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
@@ -178,7 +190,11 @@ router.post('/:id/test', requireAuth, async (req, res) => {
   const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
     .get(req.params.id, req.session.user.email);
   if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-  const tokens = req.session.tokens;
+  let tokens = req.session.tokens;
+  if (!tokens) {
+    const { getTokensForUser } = require('../services/scheduler');
+    tokens = await getTokensForUser(req.session.user.email);
+  }
   if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
   try {
     const { sendTestEmail } = require('../services/sender');
@@ -194,7 +210,11 @@ router.get('/:id/resend-failed', requireAuth, async (req, res) => {
   const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ? AND user_email = ?')
     .get(req.params.id, req.session.user.email);
   if (!campaign) return res.status(404).json({ error: 'Campaign not found' });
-  const tokens = req.session.tokens;
+  let tokens = req.session.tokens;
+  if (!tokens) {
+    const { getTokensForUser } = require('../services/scheduler');
+    tokens = await getTokensForUser(req.session.user.email);
+  }
   if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
   await db.prepare("UPDATE recipients SET status = 'pending', error = NULL WHERE campaign_id = ? AND status = 'failed'").run(req.params.id);
   res.setHeader('Content-Type', 'text/event-stream');
