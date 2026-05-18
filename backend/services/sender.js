@@ -2,7 +2,6 @@ const { getGmailClient } = require('./gmail');
 const db = require('../db/database');
 const { v4: uuidv4 } = require('uuid');
 
-// Build a raw RFC 2822 MIME message with optional HTML body and PDF attachments
 function buildMimeMessage({ from, to, subject, htmlBody, textBody, trackingPixelUrl, attachments = [] }) {
   const boundary = 'mailblast_' + Date.now();
   const hasAttachments = attachments.length > 0;
@@ -30,14 +29,12 @@ function buildMimeMessage({ from, to, subject, htmlBody, textBody, trackingPixel
     lines.push('');
   }
 
-  // Plain text part
   lines.push(`--${innerBoundary}`);
   lines.push('Content-Type: text/plain; charset=UTF-8');
   lines.push('');
   lines.push(textBody || stripHtml(htmlBody));
   lines.push('');
 
-  // HTML part
   lines.push(`--${innerBoundary}`);
   lines.push('Content-Type: text/html; charset=UTF-8');
   lines.push('');
@@ -45,7 +42,6 @@ function buildMimeMessage({ from, to, subject, htmlBody, textBody, trackingPixel
   lines.push('');
   lines.push(`--${innerBoundary}--`);
 
-  // PDF attachments
   if (hasAttachments) {
     for (const att of attachments) {
       lines.push('');
@@ -54,7 +50,6 @@ function buildMimeMessage({ from, to, subject, htmlBody, textBody, trackingPixel
       lines.push(`Content-Disposition: attachment; filename="${att.filename}"`);
       lines.push('Content-Transfer-Encoding: base64');
       lines.push('');
-      // chunk base64 at 76 chars per line (RFC 2045)
       const b64 = att.data.toString('base64');
       for (let i = 0; i < b64.length; i += 76) {
         lines.push(b64.slice(i, i + 76));
@@ -79,18 +74,18 @@ function personalize(template, name, email) {
 }
 
 async function sendCampaign(campaignId, tokens, onProgress) {
-  const campaign = db.prepare('SELECT * FROM campaigns WHERE id = ?').get(campaignId);
+  const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ?').get(campaignId);
   if (!campaign) throw new Error('Campaign not found');
 
-  const recipients = db.prepare(
+  const recipients = await db.prepare(
     "SELECT * FROM recipients WHERE campaign_id = ? AND status = 'pending'"
   ).all(campaignId);
 
-  const attachments = db.prepare('SELECT * FROM attachments WHERE campaign_id = ?').all(campaignId);
+  const attachments = await db.prepare('SELECT * FROM attachments WHERE campaign_id = ?').all(campaignId);
 
   const gmail = getGmailClient(tokens);
 
-  db.prepare("UPDATE campaigns SET status = 'sending', sent_at = datetime('now') WHERE id = ?").run(campaignId);
+  await db.prepare("UPDATE campaigns SET status = 'sending', sent_at = to_char(now(),'YYYY-MM-DD\"T\"HH24:MI:SS') WHERE id = ?").run(campaignId);
 
   let sentCount = 0;
   let failedCount = 0;
@@ -123,19 +118,18 @@ async function sendCampaign(campaignId, tokens, onProgress) {
         requestBody: { raw: rawMessage }
       });
 
-      db.prepare(
-        "UPDATE recipients SET status = 'sent', sent_at = datetime('now') WHERE id = ?"
+      await db.prepare(
+        "UPDATE recipients SET status = 'sent', sent_at = to_char(now(),'YYYY-MM-DD\"T\"HH24:MI:SS') WHERE id = ?"
       ).run(recipient.id);
 
       sentCount++;
       if (onProgress) onProgress({ email: recipient.email, status: 'sent', sentCount, failedCount, total: recipients.length });
 
-      // Respect Gmail rate limits: ~1 email per 100ms = 10/sec max
       await new Promise(r => setTimeout(r, 100));
 
     } catch (err) {
       const errorMsg = err.message || 'Unknown error';
-      db.prepare(
+      await db.prepare(
         "UPDATE recipients SET status = 'failed', error = ? WHERE id = ?"
       ).run(errorMsg, recipient.id);
 
@@ -144,7 +138,7 @@ async function sendCampaign(campaignId, tokens, onProgress) {
     }
   }
 
-  db.prepare(
+  await db.prepare(
     "UPDATE campaigns SET status = 'sent', sent_count = ?, failed_count = ? WHERE id = ?"
   ).run(sentCount, failedCount, campaignId);
 
