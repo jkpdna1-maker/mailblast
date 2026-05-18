@@ -140,7 +140,7 @@ export default function Compose({ onSaved, onBack }) {
 
     if (scheduleEnabled) {
       if (!scheduleDate || !scheduleTime) { alert('Set date and time for scheduled send.'); return; }
-      const isoStr = `${scheduleDate}T${scheduleTime}:00`;
+      const isoStr = new Date(`${scheduleDate}T${scheduleTime}:00`).toISOString();
       const scheduledTime = new Date(isoStr);
       if (scheduledTime < new Date()) { alert('Please choose a future date and time.'); return; }
       await scheduleCampaign(campaignId, isoStr);
