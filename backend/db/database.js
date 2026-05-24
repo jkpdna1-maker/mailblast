@@ -85,6 +85,17 @@ async function initDb() {
       updated_at TEXT DEFAULT to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS')
     )
   `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      email TEXT PRIMARY KEY,
+      name TEXT,
+      picture TEXT,
+      liveness_verified INTEGER DEFAULT 0,
+      liveness_verified_at TEXT,
+      biometric_token TEXT,
+      created_at TEXT DEFAULT to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS')
+    )
+  `);
   console.log('[db] Tables ready');
 }
 
@@ -114,5 +125,4 @@ function prepare(sql) {
 async function exec(sql) {
   await pool.query(sql);
 }
-
 module.exports = { initDb, prepare, exec, pool };

@@ -34,8 +34,10 @@ async function start() {
 
   const authRoutes = require('./routes/auth');
   const campaignRoutes = require('./routes/campaigns');
+  const { router: livenessRoutes, requireLiveness } = require('./routes/liveness');
   app.use('/auth', authRoutes);
-  app.use('/campaigns', campaignRoutes);
+  app.use('/liveness', livenessRoutes);
+  app.use('/campaigns', requireLiveness, campaignRoutes);
   app.use('/track', campaignRoutes);
   app.get('/health', (req, res) => res.json({ ok: true }));
 
