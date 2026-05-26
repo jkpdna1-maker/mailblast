@@ -28,6 +28,8 @@ router.get('/google/callback', async (req, res) => {
       name: user.name,
       picture: user.picture
     };
+    console.log('[auth] Session set:', req.session.user.email);
+    
 
     // Register tokens so scheduler can use them
     await registerTokens(user.email, tokens);

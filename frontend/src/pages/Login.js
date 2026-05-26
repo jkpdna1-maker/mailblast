@@ -1,33 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import LivenessCheck from '../LivenessCheck';
+import React from 'react';
 
 const BACKEND = process.env.REACT_APP_API_URL || 'http://localhost:3001';
 
 export default function Login() {
-  const [step, setStep] = useState('login'); // login | liveness | done
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('auth') === 'success') {
-      setStep('liveness');
-      window.history.replaceState({}, '', '/');
-    }
-  }, []);
-
-  const handleLivenessSuccess = async (biometric_token) => {
-    setStep('done');
-    window.location.href = '/dashboard';
-  };
-
-  const handleLivenessFail = () => {
-    setStep('login');
-    alert('Liveness check failed. Please try again.');
-  };
-
-  if (step === 'liveness') {
-    return <LivenessCheck onSuccess={handleLivenessSuccess} onFail={handleLivenessFail} />;
-  }
-
   return (
     <div className="login-page">
       <div className="login-card">
@@ -39,12 +14,12 @@ export default function Login() {
           Sign in with Google
         </a>
         <div style={{ marginTop: 16, padding: '12px 16px', background: '#e8f5e9', borderRadius: 8, fontSize: 13, color: '#2e7d32' }}>
-          🔐 Liveness verification required after login
+          🔐 Face + eye + blink verification required after login
         </div>
         <ul className="feature-list">
           <li>✓ Upload CSV / Excel / paste emails</li>
           <li>✓ Rich text message with PDF attachment</li>
-          <li>✓ Schedule send for any date & time</li>
+          <li>✓ Schedule send for any date &amp; time</li>
           <li>✓ Track who opened your email</li>
         </ul>
       </div>

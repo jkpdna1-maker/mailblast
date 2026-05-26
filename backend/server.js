@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
-const cookieSession = require('cookie-session');
+const session = require('express-session');
+const FileStore = require('session-file-store')(session);
 const cors = require('cors');
 const { initDb } = require('./db/database');
 const { startScheduler } = require('./services/scheduler');
@@ -15,21 +16,28 @@ async function start() {
   const allowedOrigins = [
     process.env.FRONTEND_URL,
     'http://localhost:3000',
-    'https://enchanting-muffin-338578.netlify.app'
+    'http://10.27.169.148:3000',
+    'https://enchanting-muffin-338578.netlify.app',
+    'https://jogger-manhood-resigned.ngrok-free.dev'
   ].filter(Boolean);
 
-  app.use(cors({ origin: allowedOrigins, credentials: true }));
+  app.use(cors({ origin: true, credentials: true }));
+  app.use((req, res, next) => { res.setHeader('ngrok-skip-browser-warning', 'true'); next(); });
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
   app.set('trust proxy', 1);
 
-  app.use(cookieSession({
-    name: 'session',
+  app.use(session({
+    store: new FileStore({ path: './sessions', ttl: 86400, retries: 0 }),
     secret: process.env.SESSION_SECRET || 'dev_secret',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-    secure: true,
-    sameSite: 'none',
-    httpOnly: true
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      sameSite: 'lax',
+      httpOnly: true,
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    }
   }));
 
   const authRoutes = require('./routes/auth');
@@ -37,8 +45,9 @@ async function start() {
   const { router: livenessRoutes, requireLiveness } = require('./routes/liveness');
   app.use('/auth', authRoutes);
   app.use('/liveness', livenessRoutes);
-  app.use('/campaigns', requireLiveness, campaignRoutes);
+  app.use('/campaigns', campaignRoutes);
   app.use('/track', campaignRoutes);
+  app.use(express.static(path.join(__dirname, 'public')));
   app.get('/health', (req, res) => res.json({ ok: true }));
 
   app.use(express.static(path.join(__dirname, '../frontend/build')));

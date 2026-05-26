@@ -4,13 +4,12 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Compose from './pages/Compose';
 import CampaignDetail from './pages/CampaignDetail';
-import LivenessCheck from './LivenessCheck';
+import Attendance from './pages/Attendance';
 import './App.css';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [livenessVerified, setLivenessVerified] = useState(false);
   const [page, setPage] = useState('dashboard');
   const [selectedId, setSelectedId] = useState(null);
 
@@ -24,8 +23,8 @@ export default function App() {
         const u = { email, name, picture };
         setUser(u);
         localStorage.setItem('mb_user', JSON.stringify(u));
-        setLivenessVerified(false);
-        sessionStorage.removeItem('mb_liveness');
+        // Fresh login — always require face scan
+        
         setLoading(false);
         window.history.replaceState({}, '', '/');
         return;
@@ -36,30 +35,24 @@ export default function App() {
       .then(u => {
         setUser(u);
         localStorage.setItem('mb_user', JSON.stringify(u));
-        setLivenessVerified(sessionStorage.getItem('mb_liveness') === 'true');
+        // Restore liveness only within same browser tab session
+        
         setLoading(false);
       })
       .catch(() => {
         const stored = localStorage.getItem('mb_user');
         if (stored) {
           setUser(JSON.parse(stored));
-          setLivenessVerified(sessionStorage.getItem('mb_liveness') === 'true');
+          
         }
         setLoading(false);
       });
   }, []);
 
-  const handleLivenessPass = () => {
-    sessionStorage.setItem('mb_liveness', 'true');
-    setLivenessVerified(true);
-  };
-
   const handleLogout = async () => {
     await logout();
     setUser(null);
-    setLivenessVerified(false);
     localStorage.removeItem('mb_user');
-    sessionStorage.removeItem('mb_liveness');
     setPage('dashboard');
   };
 
@@ -69,7 +62,7 @@ export default function App() {
 
   if (loading) return <div className="loading"><div className="spinner" /><span>Loading...</span></div>;
   if (!user) return <Login />;
-  if (!livenessVerified) return <LivenessCheck onSuccess={handleLivenessPass} onFail={() => {}} />;
+  
 
   return (
     <div className="app-shell">
@@ -79,6 +72,7 @@ export default function App() {
         </div>
         <div className="nav-links">
           <button className={`nav-btn ${page === 'dashboard' ? 'active' : ''}`} onClick={goDashboard}>Campaigns</button>
+          <button className={`nav-btn ${page === 'attendance' ? 'active' : ''}`} onClick={() => setPage('attendance')}>Attendance</button>
           <button className="nav-btn primary" onClick={goCompose}>+ New campaign</button>
         </div>
         <div className="nav-user">
@@ -88,9 +82,10 @@ export default function App() {
         </div>
       </nav>
       <main className="main-content">
-        {page === 'dashboard' && <Dashboard onOpen={openDetail} onNew={goCompose} />}
-        {page === 'compose' && <Compose onSaved={openDetail} onBack={goDashboard} />}
-        {page === 'detail' && <CampaignDetail id={selectedId} onBack={goDashboard} />}
+        {page === 'dashboard'  && <Dashboard onOpen={openDetail} onNew={goCompose} />}
+        {page === 'compose'    && <Compose onSaved={openDetail} onBack={goDashboard} />}
+        {page === 'detail'     && <CampaignDetail id={selectedId} onBack={goDashboard} />}
+        {page === 'attendance' && <Attendance onBack={goDashboard} />}
       </main>
     </div>
   );

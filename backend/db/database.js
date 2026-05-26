@@ -1,11 +1,9 @@
 require('dotenv').config();
 const { Pool } = require('pg');
-
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
-
 async function initDb() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS campaigns (
@@ -96,11 +94,46 @@ async function initDb() {
       created_at TEXT DEFAULT to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS')
     )
   `);
+
+  // Face + eye descriptors (128-float arrays stored as JSON)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS face_descriptors (
+      email TEXT PRIMARY KEY,
+      face_descriptor TEXT NOT NULL,
+      eye_left_descriptor TEXT,
+      eye_right_descriptor TEXT,
+      enrolled_at TEXT DEFAULT to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS'),
+      updated_at TEXT DEFAULT to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS')
+    )
+  `);
+
+  // Attendance log — one row per login
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS attendance (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL,
+      punched_in_at TEXT NOT NULL,
+      match_score REAL,
+      device_info TEXT,
+      created_at TEXT DEFAULT to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS')
+    )
+  `);
+
+  // Security state — tracks failed attempts and lock status
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS security_state (
+      email TEXT PRIMARY KEY,
+      failed_attempts INTEGER DEFAULT 0,
+      locked INTEGER DEFAULT 0,
+      locked_at TEXT,
+      last_attempt_at TEXT,
+      lock_alert_sent INTEGER DEFAULT 0
+    )
+  `);
+
   console.log('[db] Tables ready');
 }
-
 function prepare(sql) {
-  // Convert sql.js ? placeholders to pg $1, $2, ...
   let i = 0;
   const pgSql = sql.replace(/\?/g, () => `$${++i}`);
   return {
@@ -121,7 +154,6 @@ function prepare(sql) {
     }
   };
 }
-
 async function exec(sql) {
   await pool.query(sql);
 }
