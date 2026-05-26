@@ -21,6 +21,9 @@ router.get('/google/callback', async (req, res) => {
   try {
     const tokens = await getTokensFromCode(code);
     const user = await getUserInfo(tokens);
+  if (user.email !== 'kjnadp@gmail.com') {
+  return res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
+}
 
     req.session.tokens = tokens;
     req.session.user = {
