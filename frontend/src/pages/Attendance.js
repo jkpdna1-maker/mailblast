@@ -7,7 +7,7 @@ export default function Attendance({ onBack }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${BACKEND}/liveness/attendance`, { credentials: 'include' })
+    fetch(`${BACKEND}/api/attendance`)
       .then(r => r.json())
       .then(d => { setRecords(d.attendance || []); setLoading(false); })
       .catch(() => setLoading(false));
