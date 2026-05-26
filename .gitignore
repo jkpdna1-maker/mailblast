@@ -8,4 +8,3 @@ frontend/.env
 frontend/.env.local
 backend/sessions/
 backend/cookies.txt
-frontend/build/
