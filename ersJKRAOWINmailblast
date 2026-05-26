@@ -1,0 +1,119 @@
+warning: in the working copy of 'frontend/src/App.js', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/frontend/node_modules/.cache/.eslintcache b/frontend/node_modules/.cache/.eslintcache[m
+[1mindex 89a141b0..be2c17b1 100644[m
+[1m--- a/frontend/node_modules/.cache/.eslintcache[m
+[1m+++ b/frontend/node_modules/.cache/.eslintcache[m
+[36m@@ -1 +1 @@[m
+[31m-[{"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\index.js":"1","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\App.js":"2","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\api.js":"3","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\CampaignDetail.js":"4","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Dashboard.js":"5","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Login.js":"6","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Compose.js":"7","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\LivenessCheck.js":"8"},{"size":183,"mtime":1778810612517,"results":"9","hashOfConfig":"10"},{"size":2926,"mtime":1779002919804,"results":"11","hashOfConfig":"10"},{"size":2385,"mtime":1779074344615,"results":"12","hashOfConfig":"10"},{"size":9740,"mtime":1779074516115,"results":"13","hashOfConfig":"10"},{"size":3511,"mtime":1778810612540,"results":"14","hashOfConfig":"10"},{"size":1837,"mtime":1779602325274,"results":"15","hashOfConfig":"10"},{"size":18897,"mtime":1779067273083,"results":"16","hashOfConfig":"10"},{"size":9185,"mtime":1779602291844,"results":"17","hashOfConfig":"10"},{"filePath":"18","messages":"19","suppressedMessages":"20","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},"4irdjf",{"filePath":"21","messages":"22","suppressedMessages":"23","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"24","messages":"25","suppressedMessages":"26","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"27","messages":"28","suppressedMessages":"29","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"30","messages":"31","suppressedMessages":"32","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"33","messages":"34","suppressedMessages":"35","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"36","messages":"37","suppressedMessages":"38","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"39","messages":"40","suppressedMessages":"41","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\index.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\App.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\api.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\CampaignDetail.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Dashboard.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Login.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Compose.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\LivenessCheck.js",[],[]][m
+\ No newline at end of file[m
+[32m+[m[32m[{"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\index.js":"1","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\App.js":"2","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\api.js":"3","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\CampaignDetail.js":"4","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Dashboard.js":"5","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Login.js":"6","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Compose.js":"7","C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\LivenessCheck.js":"8"},{"size":183,"mtime":1778810612517,"results":"9","hashOfConfig":"10"},{"size":3623,"mtime":1779606611695,"results":"11","hashOfConfig":"10"},{"size":2385,"mtime":1779074344615,"results":"12","hashOfConfig":"10"},{"size":9740,"mtime":1779074516115,"results":"13","hashOfConfig":"10"},{"size":3511,"mtime":1778810612540,"results":"14","hashOfConfig":"10"},{"size":1837,"mtime":1779602325274,"results":"15","hashOfConfig":"10"},{"size":18897,"mtime":1779067273083,"results":"16","hashOfConfig":"10"},{"size":9185,"mtime":1779602291844,"results":"17","hashOfConfig":"10"},{"filePath":"18","messages":"19","suppressedMessages":"20","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},"4irdjf",{"filePath":"21","messages":"22","suppressedMessages":"23","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"24","messages":"25","suppressedMessages":"26","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"27","messages":"28","suppressedMessages":"29","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"30","messages":"31","suppressedMessages":"32","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"33","messages":"34","suppressedMessages":"35","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"36","messages":"37","suppressedMessages":"38","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},{"filePath":"39","messages":"40","suppressedMessages":"41","errorCount":0,"fatalErrorCount":0,"warningCount":0,"fixableErrorCount":0,"fixableWarningCount":0},"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\index.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\App.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\api.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\CampaignDetail.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Dashboard.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Login.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\pages\\Compose.js",[],[],"C:\\Users\\JKRAOWIN\\mailblast\\frontend\\src\\LivenessCheck.js",[],[]][m
+\ No newline at end of file[m
+[1mdiff --git a/frontend/node_modules/.cache/default-development/0.pack b/frontend/node_modules/.cache/default-development/0.pack[m
+[1mindex cb88e123..95e27ab3 100644[m
+Binary files a/frontend/node_modules/.cache/default-development/0.pack and b/frontend/node_modules/.cache/default-development/0.pack differ
+[1mdiff --git a/frontend/node_modules/.cache/default-development/1.pack b/frontend/node_modules/.cache/default-development/1.pack[m
+[1mindex 3a8314ae..d9341468 100644[m
+Binary files a/frontend/node_modules/.cache/default-development/1.pack and b/frontend/node_modules/.cache/default-development/1.pack differ
+[1mdiff --git a/frontend/node_modules/.cache/default-development/2.pack b/frontend/node_modules/.cache/default-development/2.pack[m
+[1mindex 9ce9920a..fdac9298 100644[m
+Binary files a/frontend/node_modules/.cache/default-development/2.pack and b/frontend/node_modules/.cache/default-development/2.pack differ
+[1mdiff --git a/frontend/node_modules/.cache/default-development/6.pack b/frontend/node_modules/.cache/default-development/6.pack[m
+[1mindex 21e582fd..f9ce7817 100644[m
+Binary files a/frontend/node_modules/.cache/default-development/6.pack and b/frontend/node_modules/.cache/default-development/6.pack differ
+[1mdiff --git a/frontend/node_modules/.cache/default-development/index.pack b/frontend/node_modules/.cache/default-development/index.pack[m
+[1mindex 080325be..d2d37396 100644[m
+Binary files a/frontend/node_modules/.cache/default-development/index.pack and b/frontend/node_modules/.cache/default-development/index.pack differ
+[1mdiff --git a/frontend/node_modules/.cache/default-development/index.pack.old b/frontend/node_modules/.cache/default-development/index.pack.old[m
+[1mindex 39d99adb..b0e50c7c 100644[m
+Binary files a/frontend/node_modules/.cache/default-development/index.pack.old and b/frontend/node_modules/.cache/default-development/index.pack.old differ
+[1mdiff --git a/frontend/src/App.js b/frontend/src/App.js[m
+[1mindex 233df726..1a6611c1 100644[m
+[1m--- a/frontend/src/App.js[m
+[1m+++ b/frontend/src/App.js[m
+[36m@@ -4,12 +4,14 @@[m [mimport Login from './pages/Login';[m
+ import Dashboard from './pages/Dashboard';[m
+ import Compose from './pages/Compose';[m
+ import CampaignDetail from './pages/CampaignDetail';[m
+[32m+[m[32mimport LivenessCheck from './LivenessCheck';[m
+ import './App.css';[m
+ [m
+ export default function App() {[m
+   const [user, setUser] = useState(null);[m
+   const [loading, setLoading] = useState(true);[m
+[31m-  const [page, setPage] = useState('dashboard'); // dashboard | compose | detail[m
+[32m+[m[32m  const [livenessVerified, setLivenessVerified] = useState(false);[m
+[32m+[m[32m  const [page, setPage] = useState('dashboard');[m
+   const [selectedId, setSelectedId] = useState(null);[m
+ [m
+   useEffect(() => {[m
+[36m@@ -22,23 +24,42 @@[m [mexport default function App() {[m
+         const u = { email, name, picture };[m
+         setUser(u);[m
+         localStorage.setItem('mb_user', JSON.stringify(u));[m
+[32m+[m[32m        setLivenessVerified(false);[m
+[32m+[m[32m        sessionStorage.removeItem('mb_liveness');[m
+         setLoading(false);[m
+         window.history.replaceState({}, '', '/');[m
+         return;[m
+       }[m
+       window.history.replaceState({}, '', '/');[m
+     }[m
+[31m-    getMe().then(u => { setUser(u); localStorage.setItem('mb_user', JSON.stringify(u)); setLoading(false); }).catch(() => {[m
+[31m-      const stored = localStorage.getItem('mb_user');[m
+[31m-      if (stored) { setUser(JSON.parse(stored)); }[m
+[31m-      setLoading(false);[m
+[31m-    });[m
+[32m+[m[32m    getMe()[m
+[32m+[m[32m      .then(u => {[m
+[32m+[m[32m        setUser(u);[m
+[32m+[m[32m        localStorage.setItem('mb_user', JSON.stringify(u));[m
+[32m+[m[32m        setLivenessVerified(sessionStorage.getItem('mb_liveness') === 'true');[m
+[32m+[m[32m        setLoading(false);[m
+[32m+[m[32m      })[m
+[32m+[m[32m      .catch(() => {[m
+[32m+[m[32m        const stored = localStorage.getItem('mb_user');[m
+[32m+[m[32m        if (stored) {[m
+[32m+[m[32m          setUser(JSON.parse(stored));[m
+[32m+[m[32m          setLivenessVerified(sessionStorage.getItem('mb_liveness') === 'true');[m
+[32m+[m[32m        }[m
+[32m+[m[32m        setLoading(false);[m
+[32m+[m[32m      });[m
+   }, []);[m
+ [m
+[32m+[m[32m  const handleLivenessPass = () => {[m
+[32m+[m[32m    sessionStorage.setItem('mb_liveness', 'true');[m
+[32m+[m[32m    setLivenessVerified(true);[m
+[32m+[m[32m  };[m
+[32m+[m
+   const handleLogout = async () => {[m
+     await logout();[m
+     setUser(null);[m
+[32m+[m[32m    setLivenessVerified(false);[m
+     localStorage.removeItem('mb_user');[m
+[32m+[m[32m    sessionStorage.removeItem('mb_liveness');[m
+     setPage('dashboard');[m
+   };[m
+ [m
+[36m@@ -48,6 +69,7 @@[m [mexport default function App() {[m
+ [m
+   if (loading) return <div className="loading"><div className="spinner" /><span>Loading...</span></div>;[m
+   if (!user) return <Login />;[m
+[32m+[m[32m  if (!livenessVerified) return <LivenessCheck onSuccess={handleLivenessPass} onFail={() => {}} />;[m
+ [m
+   return ([m
+     <div className="app-shell">[m
+[36m@@ -65,7 +87,6 @@[m [mexport default function App() {[m
+           <button className="nav-btn small" onClick={handleLogout}>Sign out</button>[m
+         </div>[m
+       </nav>[m
+[31m-[m
+       <main className="main-content">[m
+         {page === 'dashboard' && <Dashboard onOpen={openDetail} onNew={goCompose} />}[m
+         {page === 'compose' && <Compose onSaved={openDetail} onBack={goDashboard} />}[m
+[36m@@ -73,4 +94,4 @@[m [mexport default function App() {[m
+       </main>[m
+     </div>[m
+   );[m
+[31m-}[m
+[32m+[m[32m}[m
+\ No newline at end of file[m

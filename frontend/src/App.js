@@ -4,12 +4,14 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Compose from './pages/Compose';
 import CampaignDetail from './pages/CampaignDetail';
+import LivenessCheck from './LivenessCheck';
 import './App.css';
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState('dashboard'); // dashboard | compose | detail
+  const [livenessVerified, setLivenessVerified] = useState(false);
+  const [page, setPage] = useState('dashboard');
   const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
@@ -22,23 +24,42 @@ export default function App() {
         const u = { email, name, picture };
         setUser(u);
         localStorage.setItem('mb_user', JSON.stringify(u));
+        setLivenessVerified(false);
+        sessionStorage.removeItem('mb_liveness');
         setLoading(false);
         window.history.replaceState({}, '', '/');
         return;
       }
       window.history.replaceState({}, '', '/');
     }
-    getMe().then(u => { setUser(u); localStorage.setItem('mb_user', JSON.stringify(u)); setLoading(false); }).catch(() => {
-      const stored = localStorage.getItem('mb_user');
-      if (stored) { setUser(JSON.parse(stored)); }
-      setLoading(false);
-    });
+    getMe()
+      .then(u => {
+        setUser(u);
+        localStorage.setItem('mb_user', JSON.stringify(u));
+        setLivenessVerified(sessionStorage.getItem('mb_liveness') === 'true');
+        setLoading(false);
+      })
+      .catch(() => {
+        const stored = localStorage.getItem('mb_user');
+        if (stored) {
+          setUser(JSON.parse(stored));
+          setLivenessVerified(sessionStorage.getItem('mb_liveness') === 'true');
+        }
+        setLoading(false);
+      });
   }, []);
+
+  const handleLivenessPass = () => {
+    sessionStorage.setItem('mb_liveness', 'true');
+    setLivenessVerified(true);
+  };
 
   const handleLogout = async () => {
     await logout();
     setUser(null);
+    setLivenessVerified(false);
     localStorage.removeItem('mb_user');
+    sessionStorage.removeItem('mb_liveness');
     setPage('dashboard');
   };
 
@@ -48,6 +69,7 @@ export default function App() {
 
   if (loading) return <div className="loading"><div className="spinner" /><span>Loading...</span></div>;
   if (!user) return <Login />;
+  if (!livenessVerified) return <LivenessCheck onSuccess={handleLivenessPass} onFail={() => {}} />;
 
   return (
     <div className="app-shell">
@@ -65,7 +87,6 @@ export default function App() {
           <button className="nav-btn small" onClick={handleLogout}>Sign out</button>
         </div>
       </nav>
-
       <main className="main-content">
         {page === 'dashboard' && <Dashboard onOpen={openDetail} onNew={goCompose} />}
         {page === 'compose' && <Compose onSaved={openDetail} onBack={goDashboard} />}
