@@ -37,7 +37,7 @@ router.post('/', requireAuth, async (req, res) => {
     await pool.query(
       `INSERT INTO campaigns (id, user_email, name, subject, body_html, body_text, from_name, from_email, track_opens)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [id, req.session.user.email, name, subject, body_html, body_text||'', from_name||'', from_email||req.session.user.email, track_opens?true:false]
+      [id, req.session.user.email, name, subject, body_html, body_text||'', from_name||'', from_email||req.session.user.email, track_opens?1:0]
     );
     res.json({ id });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -65,7 +65,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     await pool.query(
       `UPDATE campaigns SET name=$1,subject=$2,body_html=$3,body_text=$4,from_name=$5,from_email=$6,track_opens=$7
        WHERE id=$8 AND user_email=$9`,
-      [name, subject, body_html, body_text||'', from_name, from_email, track_opens?true:false, req.params.id, req.session.user.email]
+      [name, subject, body_html, body_text||'', from_name, from_email, track_opens?1:0, req.params.id, req.session.user.email]
     );
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
