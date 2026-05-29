@@ -91,8 +91,18 @@ async function initDb() {
       liveness_verified INTEGER DEFAULT 0,
       liveness_verified_at TEXT,
       biometric_token TEXT,
-      created_at TEXT DEFAULT to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS')
+      created_at TEXT DEFAULT to_char(now(),'YYYY-MM-DD"T"HH24:MI:SS'),
+      mb_password TEXT,
+      mb_failed_attempts INTEGER DEFAULT 0,
+      mb_locked INTEGER DEFAULT 0,
+      mb_locked_at TEXT
     )
+  `);
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS mb_password TEXT;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS mb_failed_attempts INTEGER DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS mb_locked INTEGER DEFAULT 0;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS mb_locked_at TEXT;
   `);
 
   // Face + eye descriptors (128-float arrays stored as JSON)
