@@ -1,18 +1,39 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const { getAuthUrl, getTokensFromCode, getUserInfo } = require('../services/gmail');
 const { registerTokens } = require('../services/scheduler');
 const { pool } = require('../db/database');
 require('dotenv').config();
 
+const JWT_SECRET = process.env.JWT_SECRET || 'mailblast_jwt_secret';
+
 const ALLOWED_EMAILS = [
   'kjnadp@gmail.com',
-  'napdijk@gmail.com',
+  'napdjk@gmail.com',
   'jkpdna1@gmail.com',
-  'gururaj@gmail.com',
-  'okijpna@gmail.com'
+  'guruvujk@gmail.com',
+  'okjpna@gmail.com'
 ];
+
+// Middleware: support both session and JWT auth
+const authMiddleware = (req, res, next) => {
+  if (req.session && req.session.user) return next();
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
+      req.session.user = decoded;
+      req.session.passwordVerified = req.session.passwordVerified || false;
+    } catch (e) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+  }
+  next();
+};
+
+router.use(authMiddleware);
 
 // Step 1: Redirect to Google
 router.get('/google', (req, res) => {
@@ -20,7 +41,7 @@ router.get('/google', (req, res) => {
   res.redirect(url);
 });
 
-// Step 2: Google callback
+// Step 2: Google callback (web)
 router.get('/google/callback', async (req, res) => {
   const { code, error } = req.query;
   if (error || !code) return res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
@@ -32,7 +53,6 @@ router.get('/google/callback', async (req, res) => {
       return res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
     }
 
-    // Check if locked
     const { rows } = await pool.query('SELECT mb_locked FROM users WHERE email=$1', [user.email]);
     if (rows[0] && rows[0].mb_locked) {
       return res.redirect(`${process.env.FRONTEND_URL}?auth=locked`);
@@ -44,7 +64,6 @@ router.get('/google/callback', async (req, res) => {
 
     await registerTokens(user.email, tokens);
 
-    // Upsert user
     await pool.query(`
       INSERT INTO users (email, name, picture) VALUES ($1, $2, $3)
       ON CONFLICT (email) DO UPDATE SET name=$2, picture=$3
@@ -54,6 +73,46 @@ router.get('/google/callback', async (req, res) => {
   } catch (err) {
     console.error('OAuth callback error:', err);
     res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
+  }
+});
+
+// Mobile: verify Google access token and return JWT
+router.post('/google/mobile', async (req, res) => {
+  const { access_token } = req.body;
+  if (!access_token) return res.status(400).json({ error: 'No access token' });
+
+  try {
+    const googleRes = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo`, {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+    const user = await googleRes.json();
+
+    if (!user.email) return res.status(401).json({ error: 'Invalid Google token' });
+
+    if (!ALLOWED_EMAILS.includes(user.email)) {
+      return res.status(403).json({ error: 'Email not allowed' });
+    }
+
+    const { rows } = await pool.query('SELECT mb_locked FROM users WHERE email=$1', [user.email]);
+    if (rows[0] && rows[0].mb_locked) {
+      return res.status(403).json({ error: 'Account locked. Contact admin.' });
+    }
+
+    await pool.query(`
+      INSERT INTO users (email, name, picture) VALUES ($1, $2, $3)
+      ON CONFLICT (email) DO UPDATE SET name=$2, picture=$3
+    `, [user.email, user.name, user.picture]);
+
+    const token = jwt.sign(
+      { email: user.email, name: user.name, picture: user.picture },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ token, user: { email: user.email, name: user.name, picture: user.picture } });
+  } catch (err) {
+    console.error('Mobile auth error:', err);
+    res.status(500).json({ error: 'Auth failed' });
   }
 });
 
@@ -73,8 +132,8 @@ router.get('/password-status', async (req, res) => {
 router.post('/set-password', async (req, res) => {
   if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
   const { password } = req.body;
-  if (!password || password.length < 8 || password.length > 16) {
-    return res.status(400).json({ error: 'Password must be 8-16 characters' });
+  if (!password || password.length < 6) {
+    return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
   const { rows } = await pool.query('SELECT mb_password FROM users WHERE email=$1', [req.session.user.email]);
   if (rows[0] && rows[0].mb_password) {
