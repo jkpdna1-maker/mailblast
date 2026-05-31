@@ -6,14 +6,28 @@ const pool = require('../db/index');
 const { parseEmailList, parseFromText } = require('../services/parser');
 const { sendCampaign } = require('../services/sender');
 const { registerTokens, getTokensForUser } = require('../services/scheduler');
+const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'mailblast_jwt_secret';
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
 
 function requireAuth(req, res, next) {
-  if (!req.session || !req.session.user) {
-    return res.status(401).json({ error: 'Not authenticated' });
+  // Check session first
+  if (req.session && req.session.user) return next();
+  
+  // Check JWT token
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    try {
+      const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
+      req.session.user = decoded;
+      return next();
+    } catch (e) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
   }
-  next();
+  
+  return res.status(401).json({ error: 'Not authenticated' });
 }
 
 // GET all campaigns
