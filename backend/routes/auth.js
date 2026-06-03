@@ -17,7 +17,6 @@ const ALLOWED_EMAILS = [
   'okjpna@gmail.com'
 ];
 
-// Middleware: support both session and JWT auth
 const authMiddleware = (req, res, next) => {
   if (req.session && req.session.user) return next();
   const authHeader = req.headers.authorization;
@@ -36,6 +35,51 @@ const authMiddleware = (req, res, next) => {
 router.use(authMiddleware);
 
 // Step 1: Redirect to Google
+router.get('/google', (req, res) => {
+  const { redirectUri } = req.query;
+  if (redirectUri && redirectUri.startsWith('com.jkraowin')) {
+    const cleanCallbackUri = 'https://mailblast-api.onrender.com/auth/google/mobile-callback';
+    const url = getAuthUrl(cleanCallbackUri, redirectUri);
+    res.redirect(url);
+  } else {
+    const url = getAuthUrl();
+    res.redirect(url);
+  }
+});
+
+// Step 2: Google callback (web)
+router.get('/google/callback', async (req, res) => {
+  const { code, error } = req.query;
+  if (error || !code) return res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
+  try {
+    const tokens = await getTokensFromCode(code);
+    const user = await getUserInfo(tokens);
+    if (!ALLOWED_EMAILS.includes(user.email)) {
+      return res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
+    }
+    const { rows } = await pool.query('SELECT mb_locked FROM users WHERE email=$1', [user.email]);
+    if (rows[0] && rows[0].mb_locked) {
+      return res.redirect(`${process.env.FRONTEND_URL}?auth=locked`);
+    }
+    req.session.tokens = tokens;
+    req.session.user = { email: user.email, name: user.name, picture: user.picture };
+    req.session.passwordVerified = false;
+    await registerTokens(user.email, tokens);
+    await pool.query(`
+      INSERT INTO users (email, name, picture) VALUES ($1, $2, $3)
+      ON CONFLICT (email) DO UPDATE SET name=$2, picture=$3
+    `, [user.email, user.name, user.picture]);
+    req.session.save((err) => {
+      if (err) console.error('Session save error:', err);
+      res.redirect(`${process.env.FRONTEND_URL}?auth=success&email=${encodeURIComponent(user.email)}&name=${encodeURIComponent(user.name)}&picture=${encodeURIComponent(user.picture)}`);
+    });
+  } catch (err) {
+    console.error('OAuth callback error:', err);
+    res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
+  }
+});
+
+// Mobile: Google OAuth callback - returns JWT via redirect
 router.get('/google/mobile-callback', async (req, res) => {
   const { code, error, state } = req.query;
   const appRedirect = state || 'com.jkraowin.mailblastapp://';
@@ -64,101 +108,33 @@ router.get('/google/mobile-callback', async (req, res) => {
     res.redirect(`${appRedirect}?auth=error`);
   }
 });
-// Step 2: Google callback (web)
-router.get('/google/callback', async (req, res) => {
-  const { code, error } = req.query;
-  if (error || !code) return res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
-  try {
-    const tokens = await getTokensFromCode(code);
-    const user = await getUserInfo(tokens);
 
-    if (!ALLOWED_EMAILS.includes(user.email)) {
-      return res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
-    }
-
-    const { rows } = await pool.query('SELECT mb_locked FROM users WHERE email=$1', [user.email]);
-    if (rows[0] && rows[0].mb_locked) {
-      return res.redirect(`${process.env.FRONTEND_URL}?auth=locked`);
-    }
-
-    req.session.tokens = tokens;
-    req.session.user = { email: user.email, name: user.name, picture: user.picture };
-    req.session.passwordVerified = false;
-
-    await registerTokens(user.email, tokens);
-
-    await pool.query(`
-      INSERT INTO users (email, name, picture) VALUES ($1, $2, $3)
-      ON CONFLICT (email) DO UPDATE SET name=$2, picture=$3
-    `, [user.email, user.name, user.picture]);
-
-    res.redirect(`${process.env.FRONTEND_URL}?auth=success&email=${encodeURIComponent(user.email)}&name=${encodeURIComponent(user.name)}&picture=${encodeURIComponent(user.picture)}`);
-  } catch (err) {
-    console.error('OAuth callback error:', err);
-    res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
-  }
-});
-// Mobile: Google OAuth callback - returns JWT via redirect
-router.get('/google/mobile-callback', async (req, res) => {
-  const { code, error } = req.query;
-  const redirectUri = req.query.appRedirect || req.query.redirectUri || 'com.jkraowin.mailblastapp://';
-  if (error || !code) return res.redirect(`${redirectUri}?auth=error`);
-  try {
-    const tokens = await getTokensFromCode(code);
-    const user = await getUserInfo(tokens);
-    if (!ALLOWED_EMAILS.includes(user.email)) {
-      return res.redirect(`${redirectUri}?auth=error`);
-    }
-    await registerTokens(user.email, tokens);
-    await pool.query(`
-      INSERT INTO users (email, name, picture) VALUES ($1, $2, $3)
-      ON CONFLICT (email) DO UPDATE SET name=$2, picture=$3
-    `, [user.email, user.name, user.picture]);
-    const token = jwt.sign(
-      { email: user.email, name: user.name, picture: user.picture },
-      JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-    const userEncoded = encodeURIComponent(JSON.stringify({ email: user.email, name: user.name, picture: user.picture }));
-    res.redirect(`${redirectUri}?token=${token}&user=${userEncoded}`);
-  } catch (err) {
-    console.error('Mobile callback error:', err);
-    res.redirect(`${redirectUri}?auth=error`);
-  }
-});
 // Mobile: verify Google access token and return JWT
 router.post('/google/mobile', async (req, res) => {
   const { access_token } = req.body;
   if (!access_token) return res.status(400).json({ error: 'No access token' });
-
   try {
     const googleRes = await fetch(`https://www.googleapis.com/oauth2/v2/userinfo`, {
       headers: { Authorization: `Bearer ${access_token}` }
     });
     const user = await googleRes.json();
-
     if (!user.email) return res.status(401).json({ error: 'Invalid Google token' });
-
     if (!ALLOWED_EMAILS.includes(user.email)) {
       return res.status(403).json({ error: 'Email not allowed' });
     }
-
     const { rows } = await pool.query('SELECT mb_locked FROM users WHERE email=$1', [user.email]);
     if (rows[0] && rows[0].mb_locked) {
       return res.status(403).json({ error: 'Account locked. Contact admin.' });
     }
-
     await pool.query(`
       INSERT INTO users (email, name, picture) VALUES ($1, $2, $3)
       ON CONFLICT (email) DO UPDATE SET name=$2, picture=$3
     `, [user.email, user.name, user.picture]);
-
     const token = jwt.sign(
       { email: user.email, name: user.name, picture: user.picture },
       JWT_SECRET,
       { expiresIn: '7d' }
     );
-
     res.json({ token, user: { email: user.email, name: user.name, picture: user.picture } });
   } catch (err) {
     console.error('Mobile auth error:', err);
@@ -202,14 +178,12 @@ router.post('/verify-password', async (req, res) => {
   const { rows } = await pool.query('SELECT mb_password, mb_failed_attempts, mb_locked FROM users WHERE email=$1', [req.session.user.email]);
   if (!rows[0]) return res.status(404).json({ error: 'User not found' });
   if (rows[0].mb_locked) return res.status(403).json({ error: 'Account locked. Contact admin.' });
-
   const match = await bcrypt.compare(password, rows[0].mb_password);
   if (match) {
     await pool.query('UPDATE users SET mb_failed_attempts=0 WHERE email=$1', [req.session.user.email]);
     req.session.passwordVerified = true;
     return res.json({ ok: true });
   }
-
   const attempts = (rows[0].mb_failed_attempts || 0) + 1;
   if (attempts >= 3) {
     await pool.query('UPDATE users SET mb_failed_attempts=$1, mb_locked=1, mb_locked_at=$2 WHERE email=$3',
@@ -217,7 +191,6 @@ router.post('/verify-password', async (req, res) => {
     req.session.destroy();
     return res.status(403).json({ error: 'Account locked after 3 failed attempts. Contact admin.' });
   }
-
   await pool.query('UPDATE users SET mb_failed_attempts=$1 WHERE email=$2', [attempts, req.session.user.email]);
   return res.status(401).json({ error: `Wrong password. ${3 - attempts} attempt(s) remaining.` });
 });
@@ -235,4 +208,3 @@ router.post('/logout', (req, res) => {
 });
 
 module.exports = router;
-
