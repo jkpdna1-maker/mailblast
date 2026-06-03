@@ -180,6 +180,24 @@ router.get('/:id/send', requireAuth, async (req, res) => {
   res.end();
 });
 
+// POST alias for send (mobile app compatibility)
+router.post('/:id/send', requireAuth, async (req, res) => {
+  try {
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=\ AND user_email=\', [req.params.id, getUser(req).email]);
+    if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
+    let tokens = req.session.tokens || await getTokensForUser(getUser(req).email);
+    if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
+    res.setHeader('Content-Type','text/event-stream');
+    res.setHeader('Cache-Control','no-cache');
+    res.setHeader('Connection','keep-alive');
+    res.flushHeaders();
+    const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+    await sendCampaign(camp[0].id, tokens, (p) => send(p));
+    send({ done: true });
+  } catch (err) { res.write(`data: ${JSON.stringify({ error: err.message, done: true })}\n\n`); }
+  res.end();
+});
+
 // GET resend all (SSE)
 router.get('/:id/resend-all', requireAuth, async (req, res) => {
   try {
@@ -314,4 +332,5 @@ router.get('/open/:campaignId/:recipientId', async (req, res) => {
 });
 
 module.exports = router;
+
 
