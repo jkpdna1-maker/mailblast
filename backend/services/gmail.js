@@ -9,12 +9,13 @@ function createOAuthClient() {
   );
 }
 
-function getAuthUrl(redirectUri) {
+function getAuthUrl(redirectUri, state) {
   const client = createOAuthClient();
   return client.generateAuthUrl({
     access_type: 'offline',
     prompt: 'consent',
     redirect_uri: redirectUri || undefined,
+    state: state || undefined,
     scope: [
       'https://www.googleapis.com/auth/gmail.send',
       'https://www.googleapis.com/auth/userinfo.email',
@@ -23,8 +24,9 @@ function getAuthUrl(redirectUri) {
   });
 }
 
-async function getTokensFromCode(code) {
+async function getTokensFromCode(code, redirectUri) {
   const client = createOAuthClient();
+  if (redirectUri) client.redirectUri = redirectUri;
   const { tokens } = await client.getToken(code);
   return tokens;
 }
@@ -44,4 +46,3 @@ function getGmailClient(tokens) {
 }
 
 module.exports = { getAuthUrl, getTokensFromCode, getUserInfo, getGmailClient };
-

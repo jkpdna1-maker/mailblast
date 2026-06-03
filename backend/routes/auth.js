@@ -36,12 +36,34 @@ const authMiddleware = (req, res, next) => {
 router.use(authMiddleware);
 
 // Step 1: Redirect to Google
-router.get('/google', (req, res) => {
-  const { redirectUri } = req.query;
-  const url = getAuthUrl(redirectUri);
-  res.redirect(url);
+router.get('/google/mobile-callback', async (req, res) => {
+  const { code, error, state } = req.query;
+  const appRedirect = state || 'com.jkraowin.mailblastapp://';
+  const cleanCallbackUri = 'https://mailblast-api.onrender.com/auth/google/mobile-callback';
+  if (error || !code) return res.redirect(`${appRedirect}?auth=error`);
+  try {
+    const tokens = await getTokensFromCode(code, cleanCallbackUri);
+    const user = await getUserInfo(tokens);
+    if (!ALLOWED_EMAILS.includes(user.email)) {
+      return res.redirect(`${appRedirect}?auth=error`);
+    }
+    await registerTokens(user.email, tokens);
+    await pool.query(`
+      INSERT INTO users (email, name, picture) VALUES ($1, $2, $3)
+      ON CONFLICT (email) DO UPDATE SET name=$2, picture=$3
+    `, [user.email, user.name, user.picture]);
+    const token = jwt.sign(
+      { email: user.email, name: user.name, picture: user.picture },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    const userEncoded = encodeURIComponent(JSON.stringify({ email: user.email, name: user.name, picture: user.picture }));
+    res.redirect(`${appRedirect}?token=${token}&user=${userEncoded}`);
+  } catch (err) {
+    console.error('Mobile callback error:', err);
+    res.redirect(`${appRedirect}?auth=error`);
+  }
 });
-
 // Step 2: Google callback (web)
 router.get('/google/callback', async (req, res) => {
   const { code, error } = req.query;
@@ -79,7 +101,7 @@ router.get('/google/callback', async (req, res) => {
 // Mobile: Google OAuth callback - returns JWT via redirect
 router.get('/google/mobile-callback', async (req, res) => {
   const { code, error } = req.query;
-  const redirectUri = req.query.redirectUri || 'com.jkraowin.mailblastapp://';
+  const redirectUri = req.query.appRedirect || req.query.redirectUri || 'com.jkraowin.mailblastapp://';
   if (error || !code) return res.redirect(`${redirectUri}?auth=error`);
   try {
     const tokens = await getTokensFromCode(code);
@@ -213,3 +235,4 @@ router.post('/logout', (req, res) => {
 });
 
 module.exports = router;
+
