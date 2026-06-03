@@ -176,7 +176,10 @@ router.get('/:id/send', requireAuth, async (req, res) => {
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
     await sendCampaign(camp[0].id, tokens, (p) => send(p));
     send({ done: true });
-  } catch (err) { res.write(`data: ${JSON.stringify({ error: err.message, done: true })}\n\n`); }
+  } catch (err) { 
+  console.error('Send error:', err.message, err.stack);
+  res.write(`data: ${JSON.stringify({ error: err.message, done: true })}\n\n`); 
+  }
   res.end();
 });
 
@@ -216,7 +219,7 @@ router.get('/:id/resend-all', requireAuth, async (req, res) => {
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
     await sendCampaign(camp[0].id, tokens, (p) => send(p));
     send({ done: true });
-  } catch (err) { res.write(`data: ${JSON.stringify({ error: err.message, done: true })}\n\n`); }
+  } catch (err) { console.error("Send error:", err.message); res.write(`data: ${JSON.stringify({ error: err.message, done: true })}\n\n`); }
   res.end();
 });
 
@@ -235,7 +238,7 @@ router.get('/:id/resend-failed', requireAuth, async (req, res) => {
     const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
     await sendCampaign(camp[0].id, tokens, (p) => send(p));
     send({ done: true });
-  } catch (err) { res.write(`data: ${JSON.stringify({ error: err.message, done: true })}\n\n`); }
+  } catch (err) { console.error("Send error:", err.message); res.write(`data: ${JSON.stringify({ error: err.message, done: true })}\n\n`); }
   res.end();
 });
 
