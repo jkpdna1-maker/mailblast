@@ -37,7 +37,8 @@ router.use(authMiddleware);
 
 // Step 1: Redirect to Google
 router.get('/google', (req, res) => {
-  const url = getAuthUrl();
+  const { redirectUri } = req.query;
+  const url = getAuthUrl(redirectUri);
   res.redirect(url);
 });
 
@@ -75,7 +76,34 @@ router.get('/google/callback', async (req, res) => {
     res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
   }
 });
-
+// Mobile: Google OAuth callback - returns JWT via redirect
+router.get('/google/mobile-callback', async (req, res) => {
+  const { code, error } = req.query;
+  const redirectUri = req.query.redirectUri || 'com.jkraowin.mailblastapp://';
+  if (error || !code) return res.redirect(`${redirectUri}?auth=error`);
+  try {
+    const tokens = await getTokensFromCode(code);
+    const user = await getUserInfo(tokens);
+    if (!ALLOWED_EMAILS.includes(user.email)) {
+      return res.redirect(`${redirectUri}?auth=error`);
+    }
+    await registerTokens(user.email, tokens);
+    await pool.query(`
+      INSERT INTO users (email, name, picture) VALUES ($1, $2, $3)
+      ON CONFLICT (email) DO UPDATE SET name=$2, picture=$3
+    `, [user.email, user.name, user.picture]);
+    const token = jwt.sign(
+      { email: user.email, name: user.name, picture: user.picture },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    const userEncoded = encodeURIComponent(JSON.stringify({ email: user.email, name: user.name, picture: user.picture }));
+    res.redirect(`${redirectUri}?token=${token}&user=${userEncoded}`);
+  } catch (err) {
+    console.error('Mobile callback error:', err);
+    res.redirect(`${redirectUri}?auth=error`);
+  }
+});
 // Mobile: verify Google access token and return JWT
 router.post('/google/mobile', async (req, res) => {
   const { access_token } = req.body;
