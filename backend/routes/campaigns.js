@@ -20,8 +20,9 @@ function requireAuth(req, res, next) {
   if (authHeader && authHeader.startsWith('Bearer ')) {
     try {
       const decoded = jwt.verify(authHeader.slice(7), JWT_SECRET);
-      req.session.user = decoded;
-      return next();
+req.session.user = decoded; req.user = decoded;
+req.user = decoded;
+return next();
     } catch (e) {
       return res.status(401).json({ error: 'Invalid token' });
     }
@@ -30,13 +31,15 @@ function requireAuth(req, res, next) {
   return res.status(401).json({ error: 'Not authenticated' });
 }
 
+function getUser(req) { return req.user || req.session.user; }
+
 // GET all campaigns
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(`
       SELECT c.*, (SELECT COUNT(*) FROM open_events WHERE campaign_id = c.id) as open_count
       FROM campaigns c WHERE c.user_email = $1 ORDER BY c.created_at DESC
-    `, [req.session.user.email]);
+    `, [getUser(req).email]);
     res.json(rows);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -51,7 +54,7 @@ router.post('/', requireAuth, async (req, res) => {
     await pool.query(
       `INSERT INTO campaigns (id, user_email, name, subject, body_html, body_text, from_name, from_email, track_opens)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-      [id, req.session.user.email, name, subject, body_html, body_text||'', from_name||'', from_email||req.session.user.email, track_opens?1:0]
+      [id, getUser(req).email, name, subject, body_html, body_text||'', from_name||'', from_email||getUser(req).email, track_opens?1:0]
     );
     res.json({ id });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -62,7 +65,7 @@ router.get('/:id', requireAuth, async (req, res) => {
   try {
     const { rows: camp } = await pool.query(
       'SELECT * FROM campaigns WHERE id=$1 AND user_email=$2',
-      [req.params.id, req.session.user.email]
+      [req.params.id, getUser(req).email]
     );
     if (!camp[0]) return res.status(404).json({ error: 'Not found' });
     const { rows: recipients } = await pool.query('SELECT * FROM recipients WHERE campaign_id=$1', [req.params.id]);
@@ -79,7 +82,7 @@ router.put('/:id', requireAuth, async (req, res) => {
     await pool.query(
       `UPDATE campaigns SET name=$1,subject=$2,body_html=$3,body_text=$4,from_name=$5,from_email=$6,track_opens=$7
        WHERE id=$8 AND user_email=$9`,
-      [name, subject, body_html, body_text||'', from_name, from_email, track_opens?1:0, req.params.id, req.session.user.email]
+      [name, subject, body_html, body_text||'', from_name, from_email, track_opens?1:0, req.params.id, getUser(req).email]
     );
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -88,7 +91,7 @@ router.put('/:id', requireAuth, async (req, res) => {
 // POST upload recipients
 router.post('/:id/recipients/upload', requireAuth, upload.single('file'), async (req, res) => {
   try {
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const parsed = parseEmailList(req.file.buffer, req.file.originalname, req.file.mimetype);
@@ -107,7 +110,7 @@ router.post('/:id/recipients/paste', requireAuth, async (req, res) => {
   try {
     const { text } = req.body;
     if (!text) return res.status(400).json({ error: 'No text provided' });
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
     const parsed = parseFromText(text);
     await pool.query("DELETE FROM recipients WHERE campaign_id=$1 AND status='pending'", [req.params.id]);
@@ -123,7 +126,7 @@ router.post('/:id/recipients/paste', requireAuth, async (req, res) => {
 // POST upload attachment
 router.post('/:id/attachments', requireAuth, upload.single('pdf'), async (req, res) => {
   try {
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     const allowed = ['application/pdf','image/png','image/jpeg','image/gif'];
@@ -149,9 +152,9 @@ router.post('/:id/test', requireAuth, async (req, res) => {
   try {
     const { test_email } = req.body;
     if (!test_email) return res.status(400).json({ error: 'test_email required' });
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
-    let tokens = req.session.tokens || await getTokensForUser(req.session.user.email);
+    let tokens = req.session.tokens || await getTokensForUser(getUser(req).email);
     if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
     const { sendTestEmail } = require('../services/sender');
     await sendTestEmail(camp[0], tokens, test_email);
@@ -162,9 +165,9 @@ router.post('/:id/test', requireAuth, async (req, res) => {
 // GET send now (SSE)
 router.get('/:id/send', requireAuth, async (req, res) => {
   try {
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
-    let tokens = req.session.tokens || await getTokensForUser(req.session.user.email);
+    let tokens = req.session.tokens || await getTokensForUser(getUser(req).email);
     if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
     res.setHeader('Content-Type','text/event-stream');
     res.setHeader('Cache-Control','no-cache');
@@ -180,9 +183,9 @@ router.get('/:id/send', requireAuth, async (req, res) => {
 // GET resend all (SSE)
 router.get('/:id/resend-all', requireAuth, async (req, res) => {
   try {
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
-    let tokens = req.session.tokens || await getTokensForUser(req.session.user.email);
+    let tokens = req.session.tokens || await getTokensForUser(getUser(req).email);
     if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
     await pool.query("UPDATE recipients SET status='pending', error=NULL WHERE campaign_id=$1", [req.params.id]);
     res.setHeader('Content-Type','text/event-stream');
@@ -199,9 +202,9 @@ router.get('/:id/resend-all', requireAuth, async (req, res) => {
 // GET resend failed (SSE)
 router.get('/:id/resend-failed', requireAuth, async (req, res) => {
   try {
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
-    let tokens = req.session.tokens || await getTokensForUser(req.session.user.email);
+    let tokens = req.session.tokens || await getTokensForUser(getUser(req).email);
     if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
     await pool.query("UPDATE recipients SET status='pending', error=NULL WHERE campaign_id=$1 AND status='failed'", [req.params.id]);
     res.setHeader('Content-Type','text/event-stream');
@@ -223,7 +226,7 @@ router.post('/:id/resend-rules', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'type and delay_minutes required' });
     if (!['failed','unopened'].includes(type))
       return res.status(400).json({ error: 'type must be failed or unopened' });
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
     await pool.query("DELETE FROM resend_rules WHERE campaign_id=$1 AND type=$2 AND status='pending'", [req.params.id, type]);
     const id = uuidv4();
@@ -254,9 +257,9 @@ router.post('/:id/schedule', requireAuth, async (req, res) => {
   try {
     const { scheduled_at } = req.body;
     if (!scheduled_at) return res.status(400).json({ error: 'scheduled_at required' });
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
-    await registerTokens(req.session.user.email, req.session.tokens);
+    await registerTokens(getUser(req).email, req.session.tokens);
     const jobId = uuidv4();
     await pool.query('INSERT INTO scheduled_jobs (id,campaign_id,scheduled_at) VALUES ($1,$2,$3)', [jobId, req.params.id, scheduled_at]);
     await pool.query("UPDATE campaigns SET status='scheduled', scheduled_at=$1 WHERE id=$2", [scheduled_at, req.params.id]);
@@ -290,7 +293,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
     await pool.query('DELETE FROM scheduled_jobs WHERE campaign_id=$1', [req.params.id]);
     await pool.query('DELETE FROM open_events WHERE campaign_id=$1', [req.params.id]);
     await pool.query('DELETE FROM resend_rules WHERE campaign_id=$1', [req.params.id]);
-    await pool.query('DELETE FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, req.session.user.email]);
+    await pool.query('DELETE FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -311,3 +314,4 @@ router.get('/open/:campaignId/:recipientId', async (req, res) => {
 });
 
 module.exports = router;
+
