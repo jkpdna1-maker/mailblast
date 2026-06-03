@@ -183,7 +183,7 @@ router.get('/:id/send', requireAuth, async (req, res) => {
 // POST alias for send (mobile app compatibility)
 router.post('/:id/send', requireAuth, async (req, res) => {
   try {
-    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=\ AND user_email=\', [req.params.id, getUser(req).email]);
+    const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
     let tokens = req.session.tokens || await getTokensForUser(getUser(req).email);
     if (!tokens) return res.status(401).json({ error: 'Gmail not authenticated' });
