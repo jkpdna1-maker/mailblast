@@ -1,0 +1,1 @@
+const { pool } = require('./db/database'); const bcrypt = require('bcrypt'); bcrypt.hash('mailblast123', 10).then(hash => { pool.query('UPDATE users SET mb_password=$1, mb_failed_attempts=0, mb_locked=0 WHERE email=$2', [hash, 'napdjk@gmail.com']).then(() => { console.log('Password reset to: mailblast123'); process.exit(); }); });

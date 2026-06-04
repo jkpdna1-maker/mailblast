@@ -96,12 +96,15 @@ async function sendTestEmail(campaign, tokens, testEmail) {
 }
 
 async function sendCampaign(campaignId, tokens, onProgress) {
+  console.log('[sender] sendCampaign called for', campaignId);
   const campaign = await db.prepare('SELECT * FROM campaigns WHERE id = ?').get(campaignId);
   if (!campaign) throw new Error('Campaign not found');
+  console.log('[sender] Campaign found:', campaign.name);
 
   const recipients = await db.prepare(
     "SELECT * FROM recipients WHERE campaign_id = ? AND status = 'pending'"
   ).all(campaignId);
+  console.log('[sender] Recipients found:', recipients.length);
 
   const attachments = await db.prepare('SELECT * FROM attachments WHERE campaign_id = ?').all(campaignId);
   const gmail = getGmailClient(tokens);
