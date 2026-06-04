@@ -136,7 +136,9 @@ async function sendCampaign(campaignId, tokens, onProgress) {
         attachments: attachments.map(a => ({ filename: a.filename, mimetype: a.mimetype, data: a.data }))
       });
 
+      console.log('[sender] Sending to:', recipient.email);
       await gmail.users.messages.send({ userId: 'me', requestBody: { raw: rawMessage } });
+      console.log('[sender] Sent OK to:', recipient.email);
 
       await db.prepare("UPDATE recipients SET status = 'sent', sent_at = to_char(now(),'YYYY-MM-DD\"T\"HH24:MI:SS') WHERE id = ?").run(recipient.id);
 
@@ -145,6 +147,7 @@ async function sendCampaign(campaignId, tokens, onProgress) {
       await new Promise(r => setTimeout(r, 100));
 
     } catch (err) {
+      console.log('[sender] FAILED to:', recipient.email, err.message);
       const errorMsg = err.message || 'Unknown error';
       const status = isBounce(errorMsg) ? 'bounced' : 'failed';
       await db.prepare("UPDATE recipients SET status = ?, error = ? WHERE id = ?").run(status, errorMsg, recipient.id);
