@@ -29,7 +29,11 @@ async function start() {
   app.set('trust proxy', 1);
 
   app.use(session({
-    store: new pgSession({ conString: process.env.DATABASE_URL, tableName: 'session' }),
+    store: new pgSession({ 
+      conString: process.env.DATABASE_URL, 
+      tableName: 'session',
+      createTableIfMissing: true 
+    }),
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,
