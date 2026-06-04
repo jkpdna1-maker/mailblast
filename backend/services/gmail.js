@@ -2,10 +2,12 @@ const { google } = require('googleapis');
 require('dotenv').config();
 
 function createOAuthClient() {
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://mailblast-api.onrender.com/auth/google/callback';
+  console.log('[gmail] Using redirect URI:', redirectUri);
   return new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET
-    // no default redirect — we pass it per-call
+    process.env.GOOGLE_CLIENT_SECRET,
+    redirectUri
   );
 }
 
