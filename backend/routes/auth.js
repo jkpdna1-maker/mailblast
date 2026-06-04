@@ -135,6 +135,7 @@ router.post('/google/mobile', async (req, res) => {
       INSERT INTO users (email, name, picture) VALUES ($1, $2, $3)
       ON CONFLICT (email) DO UPDATE SET name=$2, picture=$3
     `, [user.email, user.name, user.picture]);
+    await registerTokens(user.email, { access_token });
     const token = jwt.sign(
       { email: user.email, name: user.name, picture: user.picture },
       JWT_SECRET,
