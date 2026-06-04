@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const BASE = process.env.REACT_APP_API_URL || 'https://mailblast-vmy2.onrender.com';
+// v2
+const BASE = process.env.REACT_APP_API_URL || 'https://mailblast-api.onrender.com';
 
 const api = axios.create({
   baseURL: BASE + '/campaigns',
