@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
+const pgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
 const { initDb } = require('./db/database');
 const { startScheduler } = require('./services/scheduler');
@@ -28,7 +29,7 @@ async function start() {
   app.set('trust proxy', 1);
 
   app.use(session({
-    store: new FileStore({ path: './sessions', ttl: 86400, retries: 0 }),
+    store: new pgSession({ conString: process.env.DATABASE_URL, tableName: 'session' }),
     secret: process.env.SESSION_SECRET || 'dev_secret',
     resave: false,
     saveUninitialized: false,
