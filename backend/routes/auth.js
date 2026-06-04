@@ -52,6 +52,9 @@ router.get('/google', (req, res) => {
 // Step 2: Google callback (web)
 router.get('/google/callback', async (req, res) => {
   const { code, error } = req.query;
+  console.log('[callback] code:', !!code, 'error:', error, 'query:', JSON.stringify(req.query));
+  console.log('[callback] REDIRECT_URI:', process.env.GOOGLE_REDIRECT_URI);
+  console.log('[callback] FRONTEND_URL:', process.env.FRONTEND_URL);
   if (error || !code) return res.redirect(`${process.env.FRONTEND_URL}?auth=error`);
   try {
     const tokens = await getTokensFromCode(code);
