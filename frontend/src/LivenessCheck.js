@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
-const BACKEND = process.env.REACT_APP_API_URL || 'https://mailblast-vmy2.onrender.com';
+const BACKEND = process.env.REACT_APP_API_URL || 'https://mailblast-api.onrender.com';
 const FACEAPI_CDN = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js';
 const MODELS_URL = '/models';
 
