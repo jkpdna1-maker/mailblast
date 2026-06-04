@@ -38,11 +38,13 @@ router.use(authMiddleware);
 router.get('/google', (req, res) => {
   const { redirectUri } = req.query;
   if (redirectUri && redirectUri.startsWith('com.jkraowin')) {
+    // Mobile app flow
     const cleanCallbackUri = 'https://mailblast-api.onrender.com/auth/google/mobile-callback';
     const url = getAuthUrl(cleanCallbackUri, redirectUri);
     res.redirect(url);
   } else {
-    const url = getAuthUrl();
+    // Web browser flow
+    const url = getAuthUrl('https://mailblast-api.onrender.com/auth/google/callback');
     res.redirect(url);
   }
 });
