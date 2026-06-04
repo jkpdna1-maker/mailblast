@@ -1,6 +1,6 @@
 import React from 'react';
 
-const BACKEND = process.env.REACT_APP_API_URL || 'https://mailblast-vmy2.onrender.com';
+const BACKEND = process.env.REACT_APP_API_URL || 'https://mailblast-api.onrender.com';
 
 export default function Login() {
   return (
