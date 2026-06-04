@@ -9,7 +9,7 @@ import SetPassword from './pages/SetPassword';
 import VerifyPassword from './pages/VerifyPassword';
 import './App.css';
 
-const BACKEND = process.env.REACT_APP_API_URL || 'https://mailblast-vmy2.onrender.com';
+const BACKEND = process.env.REACT_APP_API_URL || 'https://mailblast-api.onrender.com';
 
 export default function App() {
   const [user, setUser] = useState(null);
