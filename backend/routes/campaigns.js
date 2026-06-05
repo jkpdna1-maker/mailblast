@@ -190,18 +190,14 @@ router.post('/:id/send', requireAuth, async (req, res) => {
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
     let tokens = req.session.tokens || await getTokensForUser(getUser(req).email);
     if (!tokens) return res.status(401).json({ error: 'Gmail not connected. Please login via web app first.' });
-res.setHeader('Content-Type','text/event-stream');
-    res.setHeader('Cache-Control','no-cache');
-    res.setHeader('Connection','keep-alive');
-    res.flushHeaders();
-    const send = (data) => res.write(`data: ${JSON.stringify(data)}\n\n`);
-    await sendCampaign(camp[0].id, tokens, (p) => send(p));
-    send({ done: true });
-  } catch (err) { 
-  console.error('Send error:', err);
-  res.write(`data: ${JSON.stringify({ error: err.message, done: true })}\n\n`); 
+    await sendCampaign(camp[0].id, tokens, ({ email, status }) => {
+      console.log(`[send] ${status}: ${email}`);
+    });
+    res.json({ ok: true, message: 'Campaign sent successfully' });
+  } catch (err) {
+    console.error('Send error:', err.message);
+    res.status(500).json({ error: err.message });
   }
-  res.end();
 });
 
 // GET resend all (SSE)
