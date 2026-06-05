@@ -207,6 +207,18 @@ router.get('/me', (req, res) => {
   res.json({ user: req.session.user, passwordVerified: !!req.session.passwordVerified });
 });
 
+// Change password
+router.post('/change-password', async (req, res) => {
+  if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
+  const { password } = req.body;
+  if (!password || password.length < 6 || password.length > 16) {
+    return res.status(400).json({ error: 'Password must be 6-16 characters' });
+  }
+  const hashed = await bcrypt.hash(password, 10);
+  await pool.query('UPDATE users SET mb_password=$1 WHERE email=$2', [hashed, req.session.user.email]);
+  res.json({ ok: true });
+});
+
 // Logout
 router.post('/logout', (req, res) => {
   req.session = null;
