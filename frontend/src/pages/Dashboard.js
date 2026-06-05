@@ -18,8 +18,8 @@ export default function Dashboard({ onOpen, onNew }) {
 
   if (loading) return <div className="loading"><div className="spinner" /></div>;
 
-  const totalSent = campaigns.reduce((s, c) => s + (c.sent_count || 0), 0);
-  const totalOpens = campaigns.reduce((s, c) => s + (c.open_count || 0), 0);
+  const totalSent = campaigns.reduce((s, c) => s + (parseInt(c.sent_count) || 0), 0);
+  const totalOpens = campaigns.reduce((s, c) => s + (parseInt(c.open_count) || 0), 0);
 
   return (
     <div className="page">
@@ -69,8 +69,8 @@ export default function Dashboard({ onOpen, onNew }) {
                       <div className="campaign-subject">{c.subject}</div>
                     </td>
                     <td>{c.total_recipients || 0}</td>
-                    <td>{c.sent_count || 0}</td>
-                    <td>{c.open_count || 0}</td>
+                    <td>{parseInt(c.sent_count) || 0}</td>
+                    <td>{parseInt(c.open_count) || 0}</td>
                     <td>{c.sent_count > 0 ? openRate + '%' : '—'}</td>
                     <td><span className={`badge ${badge.cls}`}>{badge.label}</span></td>
                     <td className="muted">{new Date(c.created_at).toLocaleDateString()}</td>
