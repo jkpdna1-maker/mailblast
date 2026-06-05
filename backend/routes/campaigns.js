@@ -188,6 +188,19 @@ router.post('/:id/send', requireAuth, async (req, res) => {
   try {
     const { rows: camp } = await pool.query('SELECT * FROM campaigns WHERE id=$1 AND user_email=$2', [req.params.id, getUser(req).email]);
     if (!camp[0]) return res.status(404).json({ error: 'Campaign not found' });
+
+    const { schedule_date, schedule_time } = req.body || {};
+
+    // Schedule for later
+    if (schedule_date && schedule_time) {
+      const isoDate = new Date(`${schedule_date}T${schedule_time}`).toISOString();
+      const jobId = require('uuid').v4();
+      await pool.query('INSERT INTO scheduled_jobs (id,campaign_id,scheduled_at) VALUES ($1,$2,$3)', [jobId, req.params.id, isoDate]);
+      await pool.query("UPDATE campaigns SET status='scheduled', scheduled_at=$1 WHERE id=$2", [isoDate, req.params.id]);
+      return res.json({ ok: true, scheduled: true, scheduled_at: isoDate });
+    }
+
+    // Send now
     let tokens = req.session.tokens || await getTokensForUser(getUser(req).email);
     if (!tokens) return res.status(401).json({ error: 'Gmail not connected. Please login via web app first.' });
     await sendCampaign(camp[0].id, tokens, ({ email, status }) => {
@@ -199,7 +212,6 @@ router.post('/:id/send', requireAuth, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 // GET resend all (SSE)
 router.get('/:id/resend-all', requireAuth, async (req, res) => {
   try {
