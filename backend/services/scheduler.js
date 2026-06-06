@@ -37,7 +37,7 @@ function startScheduler() {
         `SELECT sj.*, c.user_email FROM scheduled_jobs sj
          JOIN campaigns c ON sj.campaign_id = c.id
          WHERE sj.status = 'pending'
-         AND sj.scheduled_at <= NOW()`
+         AND sj.scheduled_at::timestamptz <= NOW()`
         
       );
       console.log('[scheduler] Due jobs:', dueJobs.length);
