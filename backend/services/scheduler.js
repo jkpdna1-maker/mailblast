@@ -37,8 +37,8 @@ function startScheduler() {
         `SELECT sj.*, c.user_email FROM scheduled_jobs sj
          JOIN campaigns c ON sj.campaign_id = c.id
          WHERE sj.status = 'pending'
-         AND LEFT(sj.scheduled_at::text, 16) <= $1`,
-        [now]
+         AND sj.scheduled_at <= NOW()`,
+        []
       );
       console.log('[scheduler] Due jobs:', dueJobs.length);
 
