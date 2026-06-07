@@ -37,7 +37,7 @@ function getUser(req) { return req.user || req.session.user; }
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT c.*, (SELECT COUNT(*) FROM open_events WHERE campaign_id = c.id) as open_count
+      SELECT c.*, (SELECT COUNT(DISTINCT email) FROM open_events WHERE campaign_id = c.id) as open_count
       FROM campaigns c WHERE c.user_email = $1 ORDER BY c.created_at DESC
     `, [getUser(req).email]);
     res.json(rows);
