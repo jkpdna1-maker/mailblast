@@ -4,6 +4,8 @@ const session = require('express-session');
 const FileStore = require('session-file-store')(session);
 const pgSession = require('connect-pg-simple')(session);
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const { initDb } = require('./db/database');
 const { startScheduler } = require('./services/scheduler');
 const path = require('path');
@@ -23,6 +25,21 @@ async function start() {
   ].filter(Boolean);
 
   app.use(cors({ origin: true, credentials: true }));
+  app.use(helmet({ contentSecurityPolicy: false }));
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/auth', authLimiter);
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later.' }
+});
+app.use('/campaigns', apiLimiter);
   app.use((req, res, next) => { res.setHeader('ngrok-skip-browser-warning', 'true'); next(); });
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ extended: true }));
