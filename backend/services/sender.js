@@ -3,7 +3,8 @@ const db = require('../db/database');
 const { v4: uuidv4 } = require('uuid');
 
 function wrapLinks(html, campaignId, recipientId, baseUrl) {
-  return html.replace(/href="(https?:\/\/[^"]+)"/gi, (match, url) => {
+  const decoded = html.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+  return decoded.replace(/href="(https?:\/\/[^"]+)"/gi, (match, url) => {
     const tracked = `${baseUrl}/track/click/${campaignId}/${recipientId}?url=${encodeURIComponent(url)}`;
     return `href="${tracked}"`;
   });
