@@ -53,8 +53,8 @@ export default function CampaignDetail({ id, onBack }) {
 
   if (!campaign) return <div className="loading"><div className="spinner" /></div>;
 
-  const openRate = campaign.sent_count > 0
-    ? Math.round((campaign.opens?.length || 0) / campaign.sent_count * 100) : 0;
+  const openRate = parseInt(campaign.sent_count) > 0
+    ? Math.round(uniqueOpeners / parseInt(campaign.sent_count) * 100) : 0;
 
   const uniqueOpeners = new Set((campaign.opens || []).map(o => o.email)).size;
 
