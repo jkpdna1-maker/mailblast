@@ -332,6 +332,28 @@ router.delete('/:id', requireAuth, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
+// GET click tracking redirect
+router.get('/click/:campaignId/:recipientId', async (req, res) => {
+  try {
+    const { url } = req.query;
+    const { rows } = await pool.query('SELECT * FROM recipients WHERE id=$1', [req.params.recipientId]);
+    if (rows[0]) {
+      await pool.query(
+        'INSERT INTO open_events (id, campaign_id, recipient_id, email, ip, user_agent) VALUES ($1,$2,$3,$4,$5,$6)',
+        [require('uuid').v4(), req.params.campaignId, req.params.recipientId, rows[0].email, req.headers['x-forwarded-for'] || req.ip, req.headers['user-agent']]
+      );
+      await pool.query(
+        "UPDATE campaigns SET open_count = COALESCE(open_count,0)+1 WHERE id=$1",
+        [req.params.campaignId]
+      );
+    }
+    res.redirect(url || 'https://gmail.com');
+  } catch (e) {
+    console.error('Click tracking error:', e.message);
+    res.redirect(req.query.url || 'https://gmail.com');
+  }
+});
+
 // GET open tracking pixel
 router.get('/open/:campaignId/:recipientId', async (req, res) => {
   try {

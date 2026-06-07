@@ -2,6 +2,12 @@ const { getGmailClient } = require('./gmail');
 const db = require('../db/database');
 const { v4: uuidv4 } = require('uuid');
 
+function wrapLinks(html, campaignId, recipientId, baseUrl) {
+  return html.replace(/href="(https?:\/\/[^"]+)"/gi, (match, url) => {
+    const tracked = `${baseUrl}/track/click/${campaignId}/${recipientId}?url=${encodeURIComponent(url)}`;
+    return `href="${tracked}"`;
+  });
+}
 function buildMimeMessage({ from, to, subject, htmlBody, textBody, trackingPixelUrl, unsubscribeUrl, attachments = [] }) {
   const boundary = 'mailblast_' + Date.now();
   const hasAttachments = attachments.length > 0;
@@ -123,6 +129,12 @@ async function sendCampaign(campaignId, tokens, onProgress) {
       const unsubscribeUrl = `${process.env.TRACKING_BASE_URL}/campaigns/unsubscribe/${campaignId}/${encodeURIComponent(recipient.email)}`;
 
       const personalizedHtml = personalize(campaign.body_html, recipient.name, recipient.email);
+      const trackedHtml = campaign.track_opens
+        ? wrapLinks(personalizedHtml, campaignId, recipient.id, process.env.TRACKING_BASE_URL)
+        : personalizedHtml;
+      const trackedHtml = campaign.track_opens
+        ? wrapLinks(personalizedHtml, campaignId, recipient.id, process.env.TRACKING_BASE_URL)
+        : personalizedHtml;
       const personalizedSubject = personalize(campaign.subject, recipient.name, recipient.email);
 
       const rawMessage = buildMimeMessage({
