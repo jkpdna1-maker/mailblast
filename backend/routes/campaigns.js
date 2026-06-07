@@ -332,17 +332,26 @@ router.delete('/:id', requireAuth, async (req, res) => {
 
 // GET open tracking pixel
 router.get('/open/:campaignId/:recipientId', async (req, res) => {
-  const cleanId = req.params.recipientId.replace('.png','');
   try {
+    const cleanId = req.params.recipientId.replace('.png', '');
     const { rows } = await pool.query('SELECT * FROM recipients WHERE id=$1', [cleanId]);
     if (rows[0]) {
-      await pool.query('INSERT INTO open_events (id,campaign_id,recipient_id,email,ip,user_agent) VALUES ($1,$2,$3,$4,$5,$6)',
-        [uuidv4(), req.params.campaignId, cleanId, rows[0].email, req.ip, req.headers['user-agent']||'']);
+      await pool.query(
+        'INSERT INTO open_events (id, campaign_id, recipient_id, email, ip, user_agent) VALUES ($1,$2,$3,$4,$5,$6)',
+        [require('uuid').v4(), req.params.campaignId, cleanId, rows[0].email, req.ip, req.headers['user-agent']]
+      );
+      await pool.query(
+        'UPDATE campaigns SET open_count = COALESCE(open_count,0)+1 WHERE id=$1',
+        [req.params.campaignId]
+      );
     }
-  } catch (e) {}
-  const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==','base64');
-  res.set({'Content-Type':'image/png','Content-Length':pixel.length,'Cache-Control':'no-store'});
-  res.send(pixel);
+  } catch (e) {
+    console.error('Tracking error:', e.message);
+  }
+  // Return 1x1 transparent PNG
+  const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': pixel.length, 'Cache-Control': 'no-cache' });
+  res.end(pixel);
 });
 
 module.exports = router;
