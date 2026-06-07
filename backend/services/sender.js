@@ -14,7 +14,8 @@ function buildMimeMessage({ from, to, subject, htmlBody, textBody, trackingPixel
   const hasAttachments = attachments.length > 0;
   const outerBoundary = 'outer_' + boundary;
   const innerBoundary = 'inner_' + boundary;
-
+  
+  htmlBody = htmlBody.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/&quot;/g, '"');
   const injectTracking = trackingPixelUrl
     ? htmlBody + `\n<img src="${trackingPixelUrl}" width="1" height="1" style="display:none" alt="" />`
     : htmlBody;
