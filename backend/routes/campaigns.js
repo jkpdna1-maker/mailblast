@@ -342,10 +342,7 @@ router.get('/click/:campaignId/:recipientId', async (req, res) => {
         'INSERT INTO open_events (id, campaign_id, recipient_id, email, ip, user_agent) VALUES ($1,$2,$3,$4,$5,$6)',
         [require('uuid').v4(), req.params.campaignId, req.params.recipientId, rows[0].email, req.headers['x-forwarded-for'] || req.ip, req.headers['user-agent']]
       );
-      await pool.query(
-        "UPDATE campaigns SET open_count = COALESCE(open_count,0)+1 WHERE id=$1",
-        [req.params.campaignId]
-      );
+      
     }
     res.redirect(url || 'https://gmail.com');
   } catch (e) {
