@@ -141,7 +141,7 @@ async function sendCampaign(campaignId, tokens, onProgress) {
         from: `${campaign.from_name} <${campaign.from_email}>`,
         to: recipient.email,
         subject: personalizedSubject,
-        htmlBody: personalizedHtml,
+        htmlBody: trackedHtml,
         textBody: campaign.body_text ? personalize(campaign.body_text, recipient.name, recipient.email) : null,
         trackingPixelUrl,
         unsubscribeUrl,
