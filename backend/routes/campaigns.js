@@ -37,7 +37,7 @@ function getUser(req) { return req.user || req.session.user; }
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { rows } = await pool.query(`
-      SELECT c.*, (SELECT COUNT(DISTINCT email) FROM open_events WHERE campaign_id = c.id) as open_count
+      SELECT c.*, (SELECT COUNT(*)::int FROM open_events WHERE campaign_id = c.id) as open_count
       FROM campaigns c WHERE c.user_email = $1 ORDER BY c.created_at DESC
     `, [getUser(req).email]);
     res.json(rows);
@@ -339,11 +339,12 @@ router.get('/open/:campaignId/:recipientId', async (req, res) => {
       await pool.query(
         'INSERT INTO open_events (id, campaign_id, recipient_id, email, ip, user_agent) VALUES ($1,$2,$3,$4,$5,$6)',
         [require('uuid').v4(), req.params.campaignId, cleanId, rows[0].email, req.ip, req.headers['user-agent']]
-      );
       await pool.query(
-        'UPDATE campaigns SET open_count = COALESCE(open_count,0)+1 WHERE id=$1',
-        [req.params.campaignId]
+          'UPDATE campaigns SET open_count = COALESCE(open_count,0)+1 WHERE id=$1',
+          [req.params.campaignId]
+        );
       );
+      
     }
   } catch (e) {
     console.error('Tracking error:', e.message);
