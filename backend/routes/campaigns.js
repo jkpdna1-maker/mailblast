@@ -336,6 +336,14 @@ router.delete('/:id', requireAuth, async (req, res) => {
 router.get('/open/:campaignId/:recipientId', async (req, res) => {
   try {
     const cleanId = req.params.recipientId.replace('.png', '');
+    // Filter Gmail image proxy IPs
+    const ip = req.headers['x-forwarded-for'] || req.ip || '';
+    const isGmailProxy = /^(66\.102\.|209\.85\.|74\.125\.|64\.233\.|72\.14\.)/.test(ip);
+    if (isGmailProxy) {
+      const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+      res.set('Content-Type', 'image/png');
+      return res.send(pixel);
+    }
     const { rows } = await pool.query('SELECT * FROM recipients WHERE id=$1', [cleanId]);
     if (rows[0]) {
       await pool.query(
