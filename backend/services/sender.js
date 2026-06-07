@@ -132,9 +132,7 @@ async function sendCampaign(campaignId, tokens, onProgress) {
       const trackedHtml = campaign.track_opens
         ? wrapLinks(personalizedHtml, campaignId, recipient.id, process.env.TRACKING_BASE_URL)
         : personalizedHtml;
-      const trackedHtml = campaign.track_opens
-        ? wrapLinks(personalizedHtml, campaignId, recipient.id, process.env.TRACKING_BASE_URL)
-        : personalizedHtml;
+      
       const personalizedSubject = personalize(campaign.subject, recipient.name, recipient.email);
 
       const rawMessage = buildMimeMessage({
