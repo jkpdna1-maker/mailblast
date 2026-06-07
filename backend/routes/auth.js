@@ -44,7 +44,7 @@ router.get('/google', (req, res) => {
     res.redirect(url);
   } else {
     // Web browser flow
-    const url = getAuthUrl('https://mailblast-mobile-backend.onrender.com/auth/google/callback');
+    const url = getAuthUrl('https://mailblast-api.onrender.com/auth/google/callback');
     res.redirect(url);
   }
 });
