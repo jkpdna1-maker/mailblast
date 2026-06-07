@@ -39,12 +39,12 @@ router.get('/google', (req, res) => {
   const { redirectUri } = req.query;
   if (redirectUri && redirectUri.startsWith('com.jkraowin')) {
     // Mobile app flow
-    const cleanCallbackUri = 'https://mailblast-api.onrender.com/auth/google/mobile-callback';
+    const cleanCallbackUri = 'https://mailblast-mobile-backend.onrender.com/auth/google/mobile-callback';
     const url = getAuthUrl(cleanCallbackUri, redirectUri);
     res.redirect(url);
   } else {
     // Web browser flow
-    const url = getAuthUrl('https://mailblast-api.onrender.com/auth/google/callback');
+    const url = getAuthUrl('https://mailblast-mobile-backend.onrender.com/auth/google/callback');
     res.redirect(url);
   }
 });
@@ -88,7 +88,7 @@ router.get('/google/callback', async (req, res) => {
 router.get('/google/mobile-callback', async (req, res) => {
   const { code, error, state } = req.query;
   const appRedirect = state || 'com.jkraowin.mailblastapp://';
-  const cleanCallbackUri = 'https://mailblast-api.onrender.com/auth/google/mobile-callback';
+  const cleanCallbackUri = 'https://mailblast-mobile-backend.onrender.com/auth/google/mobile-callback';
   if (error || !code) return res.redirect(`${appRedirect}?auth=error`);
   try {
     const tokens = await getTokensFromCode(code, cleanCallbackUri);
