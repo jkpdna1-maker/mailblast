@@ -44,7 +44,7 @@ router.get('/google', (req, res) => {
     res.redirect(url);
   } else {
     // Web browser flow
-    const url = getAuthUrl('https://mailblast-api.onrender.com/auth/google/callback');
+    const url = getAuthUrl('https://mailblast-mobile-backend.onrender.com/auth/google/callback');
     res.redirect(url);
   }
 });
@@ -150,8 +150,9 @@ router.post('/google/mobile', async (req, res) => {
 
 // Check password status
 router.get('/password-status', async (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
-  const { rows } = await pool.query('SELECT mb_password, mb_locked FROM users WHERE email=$1', [req.session.user.email]);
+  const currentUser = req.session.user || req.user;
+if (!currentUser) return res.status(401).json({ error: 'Not authenticated' });
+  const { rows } = await pool.query('SELECT mb_password, mb_locked FROM users WHERE email=$1', [currentUser.email]);
   if (!rows[0]) return res.json({ hasPassword: false, locked: false });
   res.json({
     hasPassword: !!rows[0].mb_password,
@@ -162,42 +163,44 @@ router.get('/password-status', async (req, res) => {
 
 // Set password (first time)
 router.post('/set-password', async (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
+  const currentUser = req.session.user || req.user;
+if (!currentUser) return res.status(401).json({ error: 'Not authenticated' });
   const { password } = req.body;
   if (!password || password.length < 6) {
     return res.status(400).json({ error: 'Password must be at least 6 characters' });
   }
-  const { rows } = await pool.query('SELECT mb_password FROM users WHERE email=$1', [req.session.user.email]);
+  const { rows } = await pool.query('SELECT mb_password FROM users WHERE email=$1', [currentUser.email]);
   if (rows[0] && rows[0].mb_password) {
     return res.status(400).json({ error: 'Password already set' });
   }
   const hashed = await bcrypt.hash(password, 10);
-  await pool.query('UPDATE users SET mb_password=$1 WHERE email=$2', [hashed, req.session.user.email]);
+  await pool.query('UPDATE users SET mb_password=$1 WHERE email=$2', [hashed, currentUser.email]);
   req.session.passwordVerified = true;
   res.json({ ok: true });
 });
 
 // Verify password
 router.post('/verify-password', async (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
+  const currentUser = req.session.user || req.user;
+if (!currentUser) return res.status(401).json({ error: 'Not authenticated' });
   const { password } = req.body;
-  const { rows } = await pool.query('SELECT mb_password, mb_failed_attempts, mb_locked FROM users WHERE email=$1', [req.session.user.email]);
+  const { rows } = await pool.query('SELECT mb_password, mb_failed_attempts, mb_locked FROM users WHERE email=$1', [currentUser.email]);
   if (!rows[0]) return res.status(404).json({ error: 'User not found' });
   if (rows[0].mb_locked) return res.status(403).json({ error: 'Account locked. Contact admin.' });
   const match = await bcrypt.compare(password, rows[0].mb_password);
   if (match) {
-    await pool.query('UPDATE users SET mb_failed_attempts=0 WHERE email=$1', [req.session.user.email]);
+    await pool.query('UPDATE users SET mb_failed_attempts=0 WHERE email=$1', [currentUser.email]);
     req.session.passwordVerified = true;
     return res.json({ ok: true });
   }
   const attempts = (rows[0].mb_failed_attempts || 0) + 1;
   if (attempts >= 3) {
     await pool.query('UPDATE users SET mb_failed_attempts=$1, mb_locked=1, mb_locked_at=$2 WHERE email=$3',
-      [attempts, new Date().toISOString(), req.session.user.email]);
+      [attempts, new Date().toISOString(), currentUser.email]);
     req.session.destroy();
     return res.status(403).json({ error: 'Account locked after 3 failed attempts. Contact admin.' });
   }
-  await pool.query('UPDATE users SET mb_failed_attempts=$1 WHERE email=$2', [attempts, req.session.user.email]);
+  await pool.query('UPDATE users SET mb_failed_attempts=$1 WHERE email=$2', [attempts, currentUser.email]);
   return res.status(401).json({ error: `Wrong password. ${3 - attempts} attempt(s) remaining.` });
 });
 
@@ -215,10 +218,24 @@ router.post('/change-password', async (req, res) => {
     return res.status(400).json({ error: 'Password must be 6-16 characters' });
   }
   const hashed = await bcrypt.hash(password, 10);
-  await pool.query('UPDATE users SET mb_password=$1 WHERE email=$2', [hashed, req.session.user.email]);
+  await pool.query('UPDATE users SET mb_password=$1 WHERE email=$2', [hashed, currentUser.email]);
   res.json({ ok: true });
 });
 
+// Change password
+router.post('/change-password', async (req, res) => {
+  if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
+  const { password } = req.body;
+  if (!password || password.length < 6 || password.length > 16) {
+    return res.status(400).json({ error: 'Password must be 6-16 characters' });
+  }
+  const hashed = await bcrypt.hash(password, 10);
+  await pool.query(
+    'UPDATE users SET mb_password=$1, mb_failed_attempts=0 WHERE email=$2',
+    [hashed, req.session.user.email]
+  );
+  res.json({ ok: true });
+});
 // Logout
 router.post('/logout', (req, res) => {
   req.session = null;
