@@ -355,27 +355,40 @@ router.get('/click/:campaignId/:recipientId', async (req, res) => {
 router.get('/open/:campaignId/:recipientId', async (req, res) => {
   try {
     const cleanId = req.params.recipientId.replace('.png', '');
-    
     const { rows } = await pool.query('SELECT * FROM recipients WHERE id=$1', [cleanId]);
     if (rows[0]) {
-      await pool.query(
-        'INSERT INTO open_events (id, campaign_id, recipient_id, email, ip, user_agent) VALUES ($1,$2,$3,$4,$5,$6)',
-        [require('uuid').v4(), req.params.campaignId, cleanId, rows[0].email, req.ip, req.headers['user-agent']]
+      const { rows: campRows } = await pool.query(
+        'SELECT sent_at FROM campaigns WHERE id=$1', [req.params.campaignId]
       );
-      await pool.query(
+      const sentAt = campRows[0]?.sent_at ? new Date(campRows[0].sent_at) : null;
+      const secondsSinceSent = sentAt ? (new Date() - sentAt) / 1000 : 999;
+
+      if (secondsSinceSent < 30) {
+        const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+        res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': pixel.length, 'Cache-Control': 'no-cache' });
+        return res.end(pixel);
+      }
+
+      const { rows: alreadyOpened } = await pool.query(
+        'SELECT id FROM open_events WHERE campaign_id=$1 AND recipient_id=$2',
+        [req.params.campaignId, cleanId]
+      );
+      if (alreadyOpened.length === 0) {
+        await pool.query(
+          'INSERT INTO open_events (id, campaign_id, recipient_id, email, ip, user_agent) VALUES ($1,$2,$3,$4,$5,$6)',
+          [require('uuid').v4(), req.params.campaignId, cleanId, rows[0].email, req.ip, req.headers['user-agent']]
+        );
+        await pool.query(
           'UPDATE campaigns SET open_count = COALESCE(open_count,0)+1 WHERE id=$1',
           [req.params.campaignId]
         );
+      }
     }
   } catch (e) {
     console.error('Tracking error:', e.message);
   }
-  // Return 1x1 transparent PNG
   const pixel = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
   res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': pixel.length, 'Cache-Control': 'no-cache' });
   res.end(pixel);
 });
-
 module.exports = router;
-
-
