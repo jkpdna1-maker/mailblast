@@ -231,4 +231,19 @@ router.post('/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+router.post('/change-password', async (req, res) => {
+  try {
+    const user = req.session?.user;
+    if (!user) return res.status(401).json({ error: 'Not logged in' });
+    const { password } = req.body;
+    if (!password || password.length < 6 || password.length > 16)
+      return res.status(400).json({ error: 'Password must be 6-16 characters' });
+    const hash = await bcrypt.hash(password, 10);
+    await pool.query('UPDATE users SET mb_password=$1 WHERE email=$2', [hash, user.email]);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
