@@ -44,7 +44,7 @@ router.get('/google', (req, res) => {
     res.redirect(url);
   } else {
     // Web browser flow
-    const url = getAuthUrl('https://mailblast-mobile-backend.onrender.com/auth/google/callback');
+    const url = getAuthUrl(process.env.GOOGLE_REDIRECT_URI);
     res.redirect(url);
   }
 });
@@ -210,17 +210,6 @@ router.get('/me', (req, res) => {
   res.json({ user: req.session.user, passwordVerified: !!req.session.passwordVerified });
 });
 
-// Change password
-router.post('/change-password', async (req, res) => {
-  if (!req.session.user) return res.status(401).json({ error: 'Not authenticated' });
-  const { password } = req.body;
-  if (!password || password.length < 6 || password.length > 16) {
-    return res.status(400).json({ error: 'Password must be 6-16 characters' });
-  }
-  const hashed = await bcrypt.hash(password, 10);
-  await pool.query('UPDATE users SET mb_password=$1 WHERE email=$2', [hashed, currentUser.email]);
-  res.json({ ok: true });
-});
 
 // Change password
 router.post('/change-password', async (req, res) => {

@@ -70,9 +70,8 @@ app.use('/campaigns', apiLimiter);
   app.use('/campaigns', campaignRoutes);
   app.use('/track', campaignRoutes);
   app.use(express.static(path.join(__dirname, 'public')));
-  app.get('/health', (req, res) => res.json({ ok: true }));
-  app.get('/', (req, res) => res.json({ ok: true, service: 'MailBlast Mobile API' }));
-  app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('/health', (req, res) => res.json({ ok: true }));
+app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
   startScheduler();
   app.listen(PORT, () => {
